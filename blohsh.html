@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blohsh Blast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        :root {
+            --neon-green: #39ff14;
+            --bg-dark: #050505;
+            --board-bg: #111111;
+            --cell-border: #222222;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: var(--bg-dark);
+            color: white;
+            overflow: hidden;
+            touch-action: none; /* Previne scroll acidental no mobile */
+        }
+
+        /* Efeitos Neon */
+        .text-neon {
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green), 0 0 20px #0a4f00;
+        }
+
+        .border-neon {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2), inset 0 0 10px rgba(57, 255, 20, 0.1);
+        }
+
+        /* Grade do Jogo */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            background-color: var(--cell-border);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 2px;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+
+        .cell {
+            background-color: var(--board-bg);
+            border-radius: 4px;
+            transition: background-color 0.1s;
+        }
+
+        /* Blocos Preenchidos */
+        .cell-filled {
+            background-color: var(--neon-green);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 0 5px var(--neon-green);
+            border: 1px solid #7fff00;
+        }
+
+        /* Dica de onde a peça vai cair */
+        .cell-hint {
+            background-color: rgba(57, 255, 20, 0.3);
+            border: 1px dashed var(--neon-green);
+        }
+        
+        .cell-hint-error {
+            background-color: rgba(255, 0, 0, 0.3);
+            border: 1px dashed red;
+        }
+
+        /* Container das peças disponíveis */
+        #rack {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 120px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .rack-slot {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Elemento arrastável no rack */
+        .piece-preview {
+            display: grid;
+            gap: 1px;
+            pointer-events: none; /* Para não bugar o touch */
+            transform: scale(0.6);
+        }
+
+        .piece-preview .block {
+            width: 30px;
+            height: 30px;
+            background-color: var(--neon-green);
+            border-radius: 3px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+        }
+
+        /* A peça enquanto está sendo arrastada no mouse/dedo */
+        #dragging-container {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+            gap: 2px;
+            /* Leve aumento para visualizar melhor ao arrastar */
+            transform: scale(1.1); 
+        }
+
+        #dragging-container .block {
+            width: 40px; 
+            height: 40px;
+            background-color: var(--neon-green);
+            border-radius: 4px;
+            box-shadow: 0 0 10px var(--neon-green), inset 0 0 10px rgba(0,0,0,0.4);
+        }
+
+        .hidden-slot {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+
+        /* Animação de linha limpa */
+        @keyframes clearFlash {
+            0% { background-color: white; transform: scale(1.1); }
+            50% { background-color: var(--neon-green); transform: scale(1.0); }
+            100% { background-color: var(--board-bg); transform: scale(1); }
+        }
+
+        .clearing {
+            animation: clearFlash 0.4s ease-out forwards;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen w-full select-none">
+
+    <!-- Header -->
+    <div class="w-full max-w-[400px] flex justify-between items-center p-4">
+        <div class="flex items-center gap-2">
+            <!-- Blohsh Logo (Image) -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Blohsh.png" alt="Blohsh Logo" class="h-10 w-auto object-contain" style="filter: drop-shadow(0 0 8px #39ff14);">
+            <h1 class="text-2xl font-bold tracking-tighter text-neon">BLOHSH<br><span class="text-sm tracking-widest text-white">BLAST</span></h1>
+        </div>
+        <div class="text-right">
+            <p class="text-xs text-gray-400 uppercase">Score</p>
+            <p class="text-3xl font-bold text-white" id="score-display">0</p>
+            <p class="text-[10px] text-gray-500 mt-1">High: <span id="highscore-display">0</span></p>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="flex-1 w-full px-4 flex flex-col justify-center items-center">
+        <!-- The 8x8 Grid -->
+        <div id="board"></div>
+
+        <!-- The 3 Pieces Rack -->
+        <div id="rack">
+            <div class="rack-slot" data-index="0"></div>
+            <div class="rack-slot" data-index="1"></div>
+            <div class="rack-slot" data-index="2"></div>
+        </div>
+    </div>
+
+    <!-- Dragging Clone (follows cursor) -->
+    <div id="dragging-container"></div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+        <div class="bg-[#111] border-2 border-neon p-8 rounded-xl text-center max-w-sm w-11/12 border-neon">
+            <h2 class="text-3xl font-bold text-neon mb-2">WHERE DO WE GO?</h2>
+            <p class="text-gray-400 mb-6">Fim de Jogo. Sem espaço para novas peças.</p>
+            
+            <div class="mb-6 bg-black p-4 rounded-lg">
+                <p class="text-sm text-gray-500">Pontuação Final</p>
+                <p class="text-4xl font-bold text-white" id="final-score">0</p>
+            </div>
+
+            <button onclick="resetGame()" class="w-full bg-[#39ff14] text-black font-bold py-3 px-6 rounded-lg text-lg uppercase tracking-wider hover:bg-white transition-colors duration-200">
+                Tentar Novamente
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONSTANTS & SHAPES ---
+        const BOARD_SIZE = 8;
+        // Representação das peças (1 = bloco, 0 = vazio)
+        const SHAPES = [
+            [[1]], // Ponto 1x1
+            [[1,1]], [[1],[1]], // Linha 2
+            [[1,1,1]], [[1],[1],[1]], // Linha 3
+            [[1,1,1,1]], [[1],[1],[1],[1]], // Linha 4
+            [[1,1,1,1,1]], [[1],[1],[1],[1],[1]], // Linha 5
+            [[1,1],[1,1]], // Quadrado 2x2
+            [[1,1,1],[1,1,1],[1,1,1]], // Quadrado 3x3
+            // L pequenos
+            [[1,0],[1,1]], [[0,1],[1,1]], [[1,1],[1,0]], [[1,1],[0,1]],
+            // L médios
+            [[1,0,0],[1,0,0],[1,1,1]], [[0,0,1],[0,0,1],[1,1,1]], [[1,1,1],[1,0,0],[1,0,0]], [[1,1,1],[0,0,1],[0,0,1]],
+            // T pequeno
+            [[1,1,1],[0,1,0]], [[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]], [[0,1],[1,1],[0,1]],
+            // Z e S pequenos
+            [[1,1,0],[0,1,1]], [[0,1,1],[1,1,0]]
+        ];
+
+        // --- GAME STATE ---
+        let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+        let score = 0;
+        let highScore = localStorage.getItem('blohshHighScore') || 0;
+        let rackPieces = [null, null, null];
+        
+        // Drag state
+        let isDragging = false;
+        let dragPieceIndex = -1;
+        let dragMatrix = null;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
+
+        // --- DOM ELEMENTS ---
+        const boardEl = document.getElementById('board');
+        const rackSlots = document.querySelectorAll('.rack-slot');
+        const draggingContainer = document.getElementById('dragging-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const highscoreDisplay = document.getElementById('highscore-display');
+        const gameOverModal = document.getElementById('game-over-modal');
+
+        // --- INITIALIZATION ---
+        function init() {
+            highscoreDisplay.innerText = highScore;
+            createBoard();
+            generateRack();
+            setupEventListeners();
+        }
+
+        function createBoard() {
+            boardEl.innerHTML = '';
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoardVisuals() {
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    const cell = getCellEl(x, y);
+                    cell.className = 'cell'; // reset classes
+                    if (board[y][x] === 1) {
+                        cell.classList.add('cell-filled');
+                    }
+                }
+            }
+        }
+
+        function getCellEl(x, y) {
+            return boardEl.children[y * BOARD_SIZE + x];
+        }
+
+        // --- RACK & PIECES LOGIC ---
+        function getRandomShape() {
+            return SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        }
+
+        function generateRack() {
+            let allEmpty = rackPieces.every(p => p === null);
+            if (allEmpty) {
+                rackPieces = [getRandomShape(), getRandomShape(), getRandomShape()];
+                renderRack();
+                checkGameOver();
+            }
+        }
+
+        function renderRack() {
+            rackSlots.forEach((slot, index) => {
+                slot.innerHTML = '';
+                slot.classList.remove('hidden-slot');
+                
+                const matrix = rackPieces[index];
+                if (matrix) {
+                    const preview = document.createElement('div');
+                    preview.classList.add('piece-preview');
+                    
+                    const rows = matrix.length;
+                    const cols = matrix[0].length;
+                    preview.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                    preview.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+                    for (let y = 0; y < rows; y++) {
+                        for (let x = 0; x < cols; x++) {
+                            const block = document.createElement('div');
+                            if (matrix[y][x] === 1) {
+                                block.classList.add('block');
+                            }
+                            preview.appendChild(block);
+                        }
+                    }
+                    slot.appendChild(preview);
+
+                    // Adicionar listeners no slot
+                    slot.onmousedown = (e) => startDrag(e, index, matrix, slot);
+                    slot.ontouchstart = (e) => startDrag(e.touches[0], index, matrix, slot);
+                }
+            });
+        }
+
+        // --- DRAG AND DROP LOGIC ---
+        function setupEventListeners() {
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) e.preventDefault(); // Evita scroll ao arrastar
+                drag(e.touches[0]);
+            }, { passive: false });
+
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function startDrag(e, index, matrix, slotEl) {
+            if (!matrix) return;
+            isDragging = true;
+            dragPieceIndex = index;
+            dragMatrix = matrix;
+
+            slotEl.classList.add('hidden-slot');
+
+            // Configurar elemento arrastável
+            draggingContainer.innerHTML = '';
+            draggingContainer.style.display = 'grid';
+            
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            draggingContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            draggingContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const block = document.createElement('div');
+                    if (matrix[y][x] === 1) block.classList.add('block');
+                    draggingContainer.appendChild(block);
+                }
+            }
+
+            // Centralizar no cursor. No mobile, subir um pouco o Y para não esconder debaixo do dedo
+            const isTouch = window.TouchEvent && e instanceof Touch;
+            touchOffsetY = isTouch ? 60 : 0; 
+            
+            updateDragPosition(e.clientX, e.clientY);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            updateDragPosition(e.clientX, e.clientY);
+
+            // Calcular posição no grid
+            const gridPos = getGridPosition(e.clientX, e.clientY);
+            clearHints();
+
+            if (gridPos) {
+                const canPlace = checkFit(dragMatrix, gridPos.x, gridPos.y);
+                drawHint(dragMatrix, gridPos.x, gridPos.y, canPlace);
+            }
+        }
+
+        function updateDragPosition(x, y) {
+            // Assumindo que cada bloco no draggingContainer tem 40px
+            const width = dragMatrix[0].length * 42; 
+            const height = dragMatrix.length * 42;
+            
+            draggingContainer.style.left = `${x - width / 2}px`;
+            draggingContainer.style.top = `${y - height / 2 - touchOffsetY}px`;
+        }
+
+        function getGridPosition(clientX, clientY) {
+            const rect = boardEl.getBoundingClientRect();
+            // Posição central da peça arrastada
+            const x = clientX;
+            const y = clientY - touchOffsetY;
+
+            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                const cellSize = rect.width / BOARD_SIZE;
+                // Encontrar o topo/esquerda lógico da matriz baseada no centro arrastado
+                const matrixCols = dragMatrix[0].length;
+                const matrixRows = dragMatrix.length;
+                
+                // Mapear o cursor para uma célula, depois subtrair metade da peça para achar a âncora (0,0)
+                const hoverCellX = Math.floor((x - rect.left) / cellSize);
+                const hoverCellY = Math.floor((y - rect.top) / cellSize);
+
+                const anchorX = Math.floor(hoverCellX - (matrixCols / 2) + 0.5);
+                const anchorY = Math.floor(hoverCellY - (matrixRows / 2) + 0.5);
+
+                return { x: anchorX, y: anchorY };
+            }
+            return null;
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            draggingContainer.style.display = 'none';
+            clearHints();
+
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+            const gridPos = getGridPosition(clientX, clientY);
+
+            if (gridPos && checkFit(dragMatrix, gridPos.x, gridPos.y)) {
+                placePiece(dragMatrix, gridPos.x, gridPos.y);
+                rackPieces[dragPieceIndex] = null;
+                rackSlots[dragPieceIndex].innerHTML = '';
+                
+                checkLines();
+                generateRack(); // Gera novo rack se tudo estiver vazio
+                checkGameOver(); // Verifica se as peças restantes cabem
+            } else {
+                // Devolve a peça pro rack visualmente
+                rackSlots[dragPieceIndex].classList.remove('hidden-slot');
+            }
+
+            dragPieceIndex = -1;
+            dragMatrix = null;
+        }
+
+        // --- GAME RULES ---
+        function checkFit(matrix, anchorX, anchorY) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[0].length; x++) {
+                    if (matrix[y][x] === 1) {
+                        const boardX = anchorX + x;
+                        const boardY = anchorY + y;
+                        
+                        // Fora dos limites
+                        if (boardX < 0 || boardX >= BOARD_SIZE || boardY < 0 || boardY >= BOARD_SIZE) {
+                            return false;
+                        }
+                        // Espaço já ocupado
+                        if (board[boardY][boardX] === 1) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function placePiece(matrix, anchorX, anchorY) {
+            let blocksPlaced = 0;
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[0].length; x++) {
+                    if (matrix[y][x] === 1) {
+                        board[anchorY + y][anchorX + x] = 1;
+                        blocksPlaced++;
+                    }
+                }
+            }
+            updateBoardVisuals();
+            addScore(blocksPlaced * 10);
+        }
+
+        function clearHints() {
+            Array.from(boardEl.children).forEach(cell => {
+                cell.classList.remove('cell-hint', 'cell-hint-error');
+            });
+        }
+
+        function drawHint(matrix, anchorX, anchorY, isValid) {
+            for (let y = 0; y < matrix.length; y++) {
+                for (let x = 0; x < matrix[0].length; x++) {
+                    if (matrix[y][x] === 1) {
+                        const boardX = anchorX + x;
+                        const boardY = anchorY + y;
+                        if (boardX >= 0 && boardX < BOARD_SIZE && boardY >= 0 && boardY < BOARD_SIZE) {
+                            const cell = getCellEl(boardX, boardY);
+                            // Só desenha a dica se a célula não estiver ocupada
+                            if (board[boardY][boardX] === 0) {
+                                cell.classList.add(isValid ? 'cell-hint' : 'cell-hint-error');
+                            } else {
+                                cell.classList.add('cell-hint-error');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkLines() {
+            let rowsToClear = [];
+            let colsToClear = [];
+
+            // Checar linhas
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                if (board[y].every(cell => cell === 1)) {
+                    rowsToClear.push(y);
+                }
+            }
+
+            // Checar colunas
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                let colFull = true;
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    if (board[y][x] === 0) {
+                        colFull = false;
+                        break;
+                    }
+                }
+                if (colFull) colsToClear.push(x);
+            }
+
+            if (rowsToClear.length > 0 || colsToClear.length > 0) {
+                const totalLines = rowsToClear.length + colsToClear.length;
+                
+                // Animação e Limpeza
+                const cellsToAnimate = [];
+
+                rowsToClear.forEach(y => {
+                    for(let x=0; x<BOARD_SIZE; x++) {
+                        board[y][x] = 0;
+                        cellsToAnimate.push(getCellEl(x,y));
+                    }
+                });
+
+                colsToClear.forEach(x => {
+                    for(let y=0; y<BOARD_SIZE; y++) {
+                        board[y][x] = 0;
+                        cellsToAnimate.push(getCellEl(x,y));
+                    }
+                });
+
+                // Tocar animação
+                cellsToAnimate.forEach(cell => {
+                    cell.classList.remove('cell-filled');
+                    cell.classList.add('clearing');
+                    setTimeout(() => cell.classList.remove('clearing'), 400);
+                });
+
+                // Pontuação (combos dão mais pontos)
+                addScore((totalLines * 100) * totalLines);
+                
+                setTimeout(updateBoardVisuals, 400);
+            }
+        }
+
+        function addScore(points) {
+            score += points;
+            scoreDisplay.innerText = score;
+            if (score > highScore) {
+                highScore = score;
+                highscoreDisplay.innerText = highScore;
+                localStorage.setItem('blohshHighScore', highScore);
+            }
+        }
+
+        function checkGameOver() {
+            // Se o rack está vazio, não é game over (vai gerar novo rack)
+            if (rackPieces.every(p => p === null)) return;
+
+            // Verifica se pelo menos uma peça do rack cabe em algum lugar
+            let canPlay = false;
+
+            for (let p of rackPieces) {
+                if (!p) continue;
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        if (checkFit(p, x, y)) {
+                            canPlay = true;
+                            break;
+                        }
+                    }
+                    if (canPlay) break;
+                }
+                if (canPlay) break;
+            }
+
+            if (!canPlay) {
+                document.getElementById('final-score').innerText = score;
+                gameOverModal.classList.remove('hidden');
+            }
+        }
+
+        function resetGame() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            score = 0;
+            scoreDisplay.innerText = '0';
+            rackPieces = [null, null, null];
+            gameOverModal.classList.add('hidden');
+            updateBoardVisuals();
+            generateRack();
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
