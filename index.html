@@ -1136,8 +1136,10 @@
       updateSkin();
       updateSoundToggle();
       renderStats();
-      if (!window.BLOHSH_BLAST_PRODUCT_MODE) registerGameStart();
-      generateRack();
+      if (!window.BLOHSH_BLAST_PRODUCT_MODE) {
+        registerGameStart();
+        generateRack();
+      }
       setupEventListeners();
       setupUiControls();
     }
@@ -1281,7 +1283,6 @@
         : buildSmartRack();
 
       renderRack();
-      checkGameOver();
     }
 
     function renderRack() {
@@ -2064,6 +2065,7 @@
     }
 
     function checkGameOver() {
+      if (!gameOverModal.classList.contains('modal-hidden')) return;
       if (rackPieces.every(piece => piece === null)) return;
 
       let canPlay = false;

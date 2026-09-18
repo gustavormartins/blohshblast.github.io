@@ -344,6 +344,10 @@
     draggingContainer.style.display = 'none';
     clearHints();
 
+    screenEffect.className = '';
+    effectLayer.innerHTML = '';
+    boardEl.classList.remove('impact-place', 'impact-clear');
+
     board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
     score = 0;
     if (typeof scoreAnimationId !== 'undefined' && scoreAnimationId) {
@@ -410,13 +414,24 @@
     setTimeout(() => toast.remove(), 1900);
   }
 
+  function detectDevice() {
+    const ua = navigator.userAgent || '';
+    const uaMobile = navigator.userAgentData?.mobile === true ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const touchDevice = navigator.maxTouchPoints > 0 &&
+      window.matchMedia?.('(pointer: coarse)').matches === true;
+    const compactViewport = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 900;
+    return uaMobile || (touchDevice && compactViewport) ? 'mobile' : 'pc';
+  }
+
   function updateDeviceProfile() {
-    const mobile = window.matchMedia('(max-width: 900px)').matches;
-    const device = mobile ? 'mobile' : 'pc';
+    const device = detectDevice();
+    const mobile = device === 'mobile';
     document.body.classList.toggle('device-mobile', mobile);
     document.body.classList.toggle('device-pc', !mobile);
     const menu = $('phase3-menu');
     if (menu) menu.dataset.device = device;
+
     const subtitle = document.querySelector('.phase3-subtitle');
     if (subtitle) subtitle.innerText = mobile
       ? 'PUZZLE ARCADE // MOBILE EDITION'
@@ -1892,7 +1907,7 @@
     });
 
     writeJSON(P3.MISSIONS_KEY, P3.missions);
-    renderMissions();
+    if (document.body.classList.contains('phase3-menu-open')) renderMissions();
   }
 
   // Alias used by public helper above.
@@ -1910,12 +1925,6 @@
 
     P3.mode = 'classic';
     P3.MODE = { S: P3.MODES.classic };
-
-    // The legacy phase-2 init started one anonymous game automatically. Remove that synthetic count.
-    if (typeof stats !== 'undefined' && stats.gamesPlayed > 0) {
-      stats.gamesPlayed -= 1;
-      if (typeof saveStats === 'function') saveStats();
-    }
 
     patchExistingUI();
     installEngineBridge();

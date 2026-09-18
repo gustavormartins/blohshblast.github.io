@@ -54,7 +54,9 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await openMenu(page);
 
     await expect(page.locator('.phase3-subtitle')).toContainText('PC EDITION');
+    await expect.poll(() => page.evaluate(() => stats.gamesPlayed)).toBe(0);
     await startClassic(page);
+    await expect.poll(() => page.evaluate(() => stats.gamesPlayed)).toBe(1);
 
     // Drag + cancel: piece remains in the rack after dropping outside the board.
     const slot = page.locator('#rack .rack-slot').first();
@@ -102,12 +104,37 @@ test.describe('Blohsh Blast — core gameplay', () => {
       checkGameOver();
     });
     await expect(page.locator('#game-over-modal')).not.toHaveClass(/modal-hidden/);
+    const gameOverSoundCalls = await page.evaluate(() => {
+      let count = 0;
+      const original = playSound;
+      playSound = kind => {
+        if (kind === 'gameover') count += 1;
+        original(kind);
+      };
+      checkGameOver();
+      return count;
+    });
+    expect(gameOverSoundCalls).toBe(0);
 
     // Restart.
     await page.locator('#phase3-restart').click();
     await expect(page.locator('#game-over-modal')).toHaveClass(/modal-hidden/);
     await expect(page.locator('#phase3-menu')).toHaveClass(/phase3-menu/);
     await expect(page.locator('body')).not.toHaveClass(/phase3-menu-open/);
+    await expect.poll(() => page.evaluate(() => stats.gamesPlayed)).toBe(2);
+
+    // Hardcore multiplier is applied by the real engine bridge.
+    await page.locator('#phase3-menu-game').click();
+    await page.locator('[data-pc-action="modes"]').click();
+    await page.locator('.phase3-mode[data-mode="hardcore"]').click();
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+      rackPieces = [[[1]], null, null];
+      updateBoardVisuals();
+      renderRack();
+      startKeyboardPlacement(0, rackPieces[0], rackSlots[0]);
+    });
+    await expect.poll(() => page.evaluate(() => score)).toBe(15);
 
     // Open menu while playing, then return to game.
     await page.locator('#phase3-menu-game').click();
@@ -125,6 +152,27 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await page.locator('#phase3-menu-game').click();
     await page.locator('[data-pc-action="daily"]').click();
     await expect.poll(() => page.evaluate(() => window.BlohshBlastPhase3.getMode())).toBe('daily');
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(1));
+      rackPieces = [[[1]], null, null];
+      score = 321;
+      updateBoardVisuals();
+      renderRack();
+      checkGameOver();
+    });
+    await expect.poll(() => page.evaluate(() => {
+      const daily = JSON.parse(localStorage.getItem('blohshBlastDailyV3') || 'null');
+      return daily?.best || 0;
+    })).toBe(321);
+    await page.locator('#phase3-restart').click();
+    await expect(page.locator('#game-over-modal')).toHaveClass(/modal-hidden/);
+
+    // Leaderboard + Daily best are recorded once at game over.
+    const persisted = await page.evaluate(() => ({
+      leaderboard: JSON.parse(localStorage.getItem('blohshBlastLeaderboardV3') || '[]'),
+      daily: JSON.parse(localStorage.getItem('blohshBlastDailyV3') || 'null')
+    }));
+    expect(persisted.leaderboard.length).toBeGreaterThan(0);
 
     // Persistent skin selection.
     await page.locator('#phase3-menu-game').click();
