@@ -303,7 +303,7 @@
     renderMenu();
   }
 
-  function updateSkin() {
+  function applyPhase3Skin() {
     syncSkins(false);
 
     const chosen = P3.SKINS.find(
@@ -909,7 +909,7 @@
       startGame(P3.mode);
     };
 
-    updateSkin = updateSkin;
+    updateSkin = applyPhase3Skin;
   }
 
   P3.missionProxy = function(type, amount) {
@@ -967,7 +967,7 @@
     setupMenuEvents();
 
     document.body.classList.add('phase3-menu-open');
-    updateSkin();
+    applyPhase3Skin();
     renderMenu();
     registerServiceWorker();
 
