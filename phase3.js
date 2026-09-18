@@ -368,7 +368,7 @@
     hideMenu();
     updateSkin();
     updateBoardVisuals();
-    generateRack();
+    window.generateRack();
     updateModeChip();
   }
 
@@ -379,62 +379,6 @@
   function getCurrentShape() {
     const pool = shapePool();
     return pool[Math.floor(random01() * pool.length)];
-  }
-
-  function generateRack() {
-    if (!rackPieces.every(piece => piece === null)) return;
-
-    const useSmart = P3.MODE.S.smartRng;
-    rackPieces = useSmart
-      ? smartRackLocal()
-      : [getCurrentShape(), getCurrentShape(), getCurrentShape()];
-
-    renderRack();
-    checkGameOver();
-  }
-
-  function addScore(points, popupText = null, popupClass = '') {
-    if (!Number.isFinite(points) || points <= 0) return;
-
-    const awarded = Math.round(points * P3.MODE.S.scoreMultiplier);
-    P3.base.addScore(awarded, popupText, popupClass);
-
-    missionEvent('score', awarded);
-    addXP(Math.max(1, Math.round((awarded / 12) * P3.MODE.S.xpMultiplier)));
-  }
-
-  function placePiece(matrix, anchorX, anchorY) {
-    P3.base.placePiece(matrix, anchorX, anchorY);
-    missionEvent('pieces', 1);
-  }
-
-  function checkLines() {
-    const before = combo;
-    const result = P3.base.checkLines();
-
-    if (result > 0) {
-      missionEvent('lines', result);
-      missionEvent('combo', combo);
-      if (board.every(row => row.every(cell => cell === 0))) {
-        missionEvent('perfect', 1);
-      }
-    } else if (before > 0) {
-      // The base game already resets the combo from its caller; mission progress stays as a maximum.
-    }
-
-    return result;
-  }
-
-  function checkGameOver() {
-    P3.base.checkGameOver();
-
-    const modal = $('game-over-modal');
-    const visible = modal && !modal.classList.contains('modal-hidden');
-
-    if (visible && !P3.gameEnded) {
-      P3.gameEnded = true;
-      recordScore(score);
-    }
   }
 
   function registerServiceWorker() {
@@ -1891,27 +1835,23 @@
   }
 
   function patchEngine() {
-    P3.base.generateRack = generateRack;
-    P3.base.getRandomShape = getRandomShape;
-    P3.base.addScore = addScore;
-    P3.base.placePiece = placePiece;
-    P3.base.checkLines = checkLines;
-    P3.base.checkGameOver = checkGameOver;
-    P3.base.resetGame = resetGame;
+    // Capture the real legacy engine functions from the classic script.
+    P3.base.generateRack = window.generateRack;
+    P3.base.getRandomShape = window.getRandomShape;
+    P3.base.addScore = window.addScore;
+    P3.base.placePiece = window.placePiece;
+    P3.base.checkLines = window.checkLines;
+    P3.base.checkGameOver = window.checkGameOver;
+    P3.base.resetGame = window.resetGame;
 
-    // Base game functions call this symbol during combo/Perfect Clear.
-    if (typeof missionEvent === 'function') {
-      missionEvent = function(type, amount = 1) {
-        if (type === 'score') return;
-        if (type === 'pieces') return;
-        if (type === 'lines') return;
-        if (type === 'combo') return P3.missionProxy(type, amount);
-        if (type === 'perfect') return P3.missionProxy(type, amount);
+    if (typeof window.missionEvent === 'function') {
+      window.missionEvent = function(type, amount = 1) {
+        if (type === 'score' || type === 'pieces' || type === 'lines') return;
         return P3.missionProxy(type, amount);
       };
     }
 
-    generateRack = function() {
+    window.generateRack = function() {
       if (!rackPieces.every(piece => piece === null)) return;
 
       const useSmart = P3.MODE.S.smartRng;
@@ -1920,12 +1860,12 @@
         : [getRandomShapeLocal(), getRandomShapeLocal(), getRandomShapeLocal()];
 
       renderRack();
-      checkGameOver();
+      window.checkGameOver();
     };
 
-    getRandomShape = getRandomShapeLocal;
+    window.getRandomShape = getRandomShapeLocal;
 
-    addScore = function(points, popupText = null, popupClass = '') {
+    window.addScore = function(points, popupText = null, popupClass = '') {
       if (!Number.isFinite(points) || points <= 0) return;
       const awarded = Math.round(points * P3.MODE.S.scoreMultiplier);
       P3.base.addScore(awarded, popupText, popupClass);
@@ -1933,13 +1873,14 @@
       addXP(Math.max(1, Math.round((awarded / 12) * P3.MODE.S.xpMultiplier)));
     };
 
-    placePiece = function(matrix, anchorX, anchorY) {
+    window.placePiece = function(matrix, anchorX, anchorY) {
       P3.base.placePiece(matrix, anchorX, anchorY);
       P3.missionProxy('pieces', 1);
     };
 
-    checkLines = function() {
+    window.checkLines = function() {
       const result = P3.base.checkLines();
+
       if (result > 0) {
         P3.missionProxy('lines', result);
         P3.missionProxy('combo', combo);
@@ -1947,11 +1888,13 @@
           P3.missionProxy('perfect', 1);
         }
       }
+
       return result;
     };
 
-    checkGameOver = function() {
+    window.checkGameOver = function() {
       P3.base.checkGameOver();
+
       const modal = $('game-over-modal');
       const visible = modal && !modal.classList.contains('modal-hidden');
 
@@ -1961,11 +1904,11 @@
       }
     };
 
-    resetGame = function() {
+    window.resetGame = function() {
       startGame(P3.mode);
     };
 
-    updateSkin = applyPhase3Skin;
+    window.updateSkin = applyPhase3Skin;
   }
 
   P3.missionProxy = function(type, amount) {
