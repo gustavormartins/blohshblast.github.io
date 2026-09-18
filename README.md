@@ -65,3 +65,16 @@ Abre um Pull Request.
 📝 Licença
 
 Este projeto está licenciado sob a licença MIT - vê o ficheiro LICENSE para mais detalhes. É totalmente livre e gratuito para a comunidade!
+
+
+## Fase 3 — Produto
+
+A experiência agora inclui menu inicial, modos Classic/Zen/Hardcore/Daily, progressão permanente por XP, skins desbloqueáveis, missões diárias, desafio diário com seed determinística, PWA instalável, cache offline e leaderboard local.
+
+### Armazenamento
+
+A progressão, nickname, missões, scores e preferências são persistidos no navegador via localStorage. O leaderboard desta versão é deliberadamente local; a sincronização online pode ser adicionada posteriormente com um backend autenticado.
+
+### PWA / Offline
+
+O app usa `manifest.webmanifest`, `sw.js`, `icon.svg` e `phase3.js`. Depois do primeiro carregamento, o shell do jogo pode ser aberto sem conexão.
