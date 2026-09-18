@@ -992,11 +992,11 @@
       menuBtn.innerText = 'Menu Principal';
       menuBtn.addEventListener('click', showMenu);
 
-      const actionWrap = legacyGameOverButton.parentElement;
-      if (actionWrap) {
-        actionWrap.classList.add('phase3-gameover-actions');
-        actionWrap.appendChild(menuBtn);
-      }
+      const actionWrap = document.createElement('div');
+      actionWrap.className = 'phase3-gameover-actions';
+      legacyGameOverButton.parentElement?.insertBefore(actionWrap, legacyGameOverButton);
+      actionWrap.appendChild(legacyGameOverButton);
+      actionWrap.appendChild(menuBtn);
     }
 
     if ($('phase3-close-menu')) $('phase3-close-menu').addEventListener('click', () => startGame('classic'));
