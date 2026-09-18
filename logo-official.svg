@@ -1,38 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 360" role="img" aria-labelledby="title desc">
   <title id="title">Blohsh Blast</title>
-  <desc id="desc">Blohsh mascot matching the official menu prototype silhouette.</desc>
+  <desc id="desc">Blohsh mascot matching the vertical silhouette from the official menu prototype.</desc>
   <g fill="#39ff14">
-    <!-- Head -->
-    <circle cx="82" cy="58" r="27"/>
-    <!-- Body, arms and split legs -->
-    <path d="
-      M 55 91
-      C 60 86, 68 83, 77 80
-      L 148 48
-      C 165 41, 181 50, 181 67
-      L 181 143
-      C 181 158, 171 168, 158 168
-      C 145 168, 136 158, 136 144
-      L 136 92
-      L 129 96
-      L 129 276
-      C 129 292, 118 303, 103 303
-      C 88 303, 77 292, 77 276
-      L 77 166
-      L 77 166
-      L 77 320
-      C 77 336, 66 347, 51 347
-      C 36 347, 25 336, 25 320
-      L 25 169
-      C 25 161, 20 157, 14 151
-      C 3 140, 3 124, 14 114
-      C 24 105, 36 104, 46 110
-      L 58 117
-      L 49 101
-      C 46 96, 50 93, 55 91
-      Z
-    "/>
-    <!-- Clean separation between left arm and torso -->
-    <path d="M 51 117 L 51 170 C 51 183, 43 191, 31 191 C 19 191, 11 183, 11 170 L 11 132 C 11 122, 17 115, 26 112 C 34 109, 43 112, 51 117 Z" opacity="0"/>
+    <circle cx="83" cy="58" r="27"/>
+
+    <!-- Main slanted body / shoulder -->
+    <path d="M52 93 L144 51 C157 45 170 52 170 66 L170 136
+             C170 151 160 160 147 160 C134 160 125 151 125 136
+             L125 103 L106 111 L106 168 L52 168 Z"/>
+
+    <!-- Left arm -->
+    <path d="M53 106 L53 170 C53 184 44 193 32 193
+             C19 193 11 184 11 170 L11 132
+             C11 119 18 110 29 106 C37 103 46 103 53 106 Z"/>
+
+    <!-- Left leg -->
+    <path d="M53 145 L87 145 L87 320
+             C87 337 76 348 61 348 C45 348 34 337 34 320
+             L34 177 C34 159 41 148 53 145 Z"/>
+
+    <!-- Right leg -->
+    <path d="M91 123 L126 123 L126 276
+             C126 293 115 304 101 304 C86 304 76 293 76 276
+             L76 153 C76 137 82 127 91 123 Z"/>
   </g>
 </svg>
