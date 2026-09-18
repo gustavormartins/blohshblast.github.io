@@ -72,7 +72,7 @@ test.describe('Blohsh Blast — PC smoke / gameplay', () => {
     await page.mouse.down();
     await page.mouse.move(boardBox.x + boardBox.width / 2, boardBox.y + boardBox.height / 2, { steps: 12 });
     await page.mouse.up();
-    await expect(slot).toHaveClass(/hidden-slot/, { timeout: 1_000 }).catch(() => {});
+    await expect(slot).toBeEmpty();
     await expect(page.locator('#score-display')).not.toHaveText('0');
 
     // Deterministic clear + Perfect Clear.
