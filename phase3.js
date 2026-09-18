@@ -627,6 +627,30 @@
 
     $('phase3-close-menu').addEventListener('click', hideMenu);
 
+    document.querySelectorAll('[data-pc-action]').forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.pcAction;
+        const menu = $('phase3-menu');
+
+        if (action === 'play') return startGame('classic');
+        if (action === 'daily') return startGame('daily');
+        if (action === 'stats') return openStats();
+
+        if (action === 'modes') {
+          menu.classList.toggle('pc-modes-open');
+          menu.classList.remove('pc-sections-open');
+          return;
+        }
+
+        if (action === 'skins' || action === 'missions') {
+          menu.classList.remove('pc-modes-open');
+          menu.classList.add('pc-sections-open');
+          const target = action === 'skins' ? $('phase3-skins') : $('phase3-missions');
+          target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+
     window.addEventListener('online', () => updateOfflineStatus());
     window.addEventListener('offline', () => updateOfflineStatus());
 
@@ -725,6 +749,292 @@
       .phase3-stat span{display:block;color:var(--text-muted);font-size:8px;letter-spacing:.1em;text-transform:uppercase}
       .phase3-stat strong{display:block;margin-top:4px;color:var(--text-main);font-size:21px}
       .phase3-note{margin:12px 0 0;color:var(--text-muted);font-size:9px;line-height:1.5;text-align:center}
+
+      /* --- PC MENU: neon arcade desktop experience --- */
+      @media (min-width: 901px) {
+        body.phase3-menu-open {
+          overflow: hidden;
+        }
+
+        .phase3-menu {
+          padding: 0;
+          background:
+            radial-gradient(circle at 50% 38%, rgba(57,255,20,.16), transparent 34%),
+            radial-gradient(circle at 50% 100%, rgba(57,255,20,.12), transparent 42%),
+            #020302;
+        }
+
+        .phase3-menu::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: .42;
+          background:
+            linear-gradient(rgba(57,255,20,.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(57,255,20,.055) 1px, transparent 1px);
+          background-size: 46px 46px;
+          mask-image: linear-gradient(to bottom, transparent 0%, black 45%, black 100%);
+        }
+
+        .phase3-menu::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 24vh;
+          pointer-events: none;
+          background:
+            linear-gradient(to bottom, transparent, rgba(57,255,20,.08)),
+            repeating-linear-gradient(90deg, rgba(57,255,20,.16) 0 1px, transparent 1px 80px),
+            repeating-linear-gradient(0deg, rgba(57,255,20,.16) 0 1px, transparent 1px 42px);
+          transform: perspective(260px) rotateX(56deg);
+          transform-origin: bottom;
+          opacity: .55;
+        }
+
+        .phase3-menu-card {
+          position: relative;
+          width: 100vw;
+          height: 100dvh;
+          max-height: none;
+          overflow: hidden;
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+
+        .phase3-brand {
+          position: absolute;
+          z-index: 10;
+          top: 28px;
+          left: 34px;
+          margin: 0;
+          text-align: left;
+        }
+
+        .phase3-brand::after {
+          content: 'PLUG > DROP > BLAST';
+          display: block;
+          margin-top: 8px;
+          color: var(--accent);
+          font-size: 12px;
+          letter-spacing: .16em;
+          text-shadow: 0 0 8px var(--accent);
+        }
+
+        .phase3-logo {
+          position: fixed;
+          z-index: 3;
+          left: 50%;
+          top: 7vh;
+          width: 180px;
+          height: 250px;
+          margin: 0;
+          object-fit: contain;
+          transform: translateX(-50%);
+          filter: drop-shadow(0 0 12px var(--accent)) drop-shadow(0 0 32px color-mix(in srgb, var(--accent) 42%, transparent));
+          mix-blend-mode: screen;
+        }
+
+        .phase3-title {
+          font-size: 44px;
+          line-height: .86;
+          letter-spacing: -.07em;
+          text-shadow: 0 0 8px var(--accent), 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
+        }
+
+        .phase3-subtitle {
+          margin-top: 10px;
+          font-size: 10px;
+          letter-spacing: .2em;
+        }
+
+        .phase3-profile {
+          position: absolute;
+          z-index: 8;
+          left: 30px;
+          bottom: 24px;
+          width: 280px;
+          margin: 0;
+          padding: 14px;
+          border-radius: 18px;
+          background: rgba(0,0,0,.58);
+          backdrop-filter: blur(12px);
+        }
+
+        .phase3-pc-nav {
+          position: absolute;
+          z-index: 9;
+          top: 39%;
+          left: 50%;
+          width: min(470px, 42vw);
+          transform: translateX(-50%);
+          display: grid;
+          gap: 9px;
+        }
+
+        .phase3-pc-nav button {
+          min-height: 54px;
+          border: 1px solid var(--accent);
+          border-radius: 15px;
+          padding: 0 22px;
+          background: rgba(0,0,0,.58);
+          color: var(--text-main);
+          font: inherit;
+          font-size: 16px;
+          font-weight: 700;
+          letter-spacing: .12em;
+          text-align: left;
+          text-transform: uppercase;
+          cursor: pointer;
+          box-shadow: 0 0 10px rgba(57,255,20,.08), inset 0 0 18px rgba(57,255,20,.025);
+          transition: transform 150ms ease, background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+        }
+
+        .phase3-pc-nav button::before {
+          content: '›';
+          display: inline-block;
+          width: 28px;
+          color: var(--accent);
+          font-size: 25px;
+          line-height: 0;
+          transform: translateY(2px);
+        }
+
+        .phase3-pc-nav button:hover,
+        .phase3-pc-nav button:focus-visible {
+          transform: translateY(-2px);
+          background: rgba(57,255,20,.11);
+          box-shadow: 0 0 20px rgba(57,255,20,.2), inset 0 0 20px rgba(57,255,20,.06);
+          outline: none;
+        }
+
+        .phase3-pc-nav button[data-pc-action="play"] {
+          min-height: 68px;
+          background: var(--accent);
+          color: #020302;
+          box-shadow: 0 0 26px rgba(57,255,20,.35);
+        }
+
+        .phase3-pc-nav button[data-pc-action="play"]::before {
+          content: '▶';
+          color: #020302;
+          font-size: 18px;
+        }
+
+        .phase3-pc-nav button[data-pc-action="daily"]::before {
+          content: '◆';
+          font-size: 14px;
+        }
+
+        .phase3-modes {
+          display: none;
+        }
+
+        .phase3-menu.pc-modes-open .phase3-modes {
+          position: absolute;
+          z-index: 20;
+          left: 50%;
+          top: 39%;
+          width: min(470px, 42vw);
+          transform: translateX(-50%);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 9px;
+          padding: 0;
+        }
+
+        .phase3-menu.pc-modes-open .phase3-pc-nav {
+          display: none;
+        }
+
+        .phase3-menu.pc-modes-open .phase3-mode {
+          min-height: 72px;
+          border-radius: 15px;
+          background: rgba(0,0,0,.8);
+        }
+
+        .phase3-menu.pc-modes-open .phase3-mode strong {
+          font-size: 15px;
+        }
+
+        .phase3-columns {
+          display: none;
+        }
+
+        .phase3-menu.pc-sections-open .phase3-columns {
+          position: absolute;
+          z-index: 21;
+          left: 50%;
+          bottom: 24px;
+          width: min(720px, 55vw);
+          transform: translateX(-50%);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin: 0;
+        }
+
+        .phase3-menu.pc-sections-open .phase3-profile {
+          filter: brightness(.55);
+        }
+
+        .phase3-leaderboard-panel {
+          position: absolute !important;
+          z-index: 8;
+          right: 30px;
+          bottom: 24px;
+          width: 320px;
+          margin: 0 !important;
+          padding: 14px;
+          border-radius: 18px;
+          background: rgba(0,0,0,.58);
+          backdrop-filter: blur(12px);
+        }
+
+        .phase3-menu.pc-sections-open .phase3-leaderboard-panel {
+          opacity: .35;
+        }
+
+        .phase3-actions {
+          position: absolute;
+          z-index: 12;
+          top: 28px;
+          right: 30px;
+          display: flex;
+          gap: 10px;
+          margin: 0;
+        }
+
+        .phase3-action {
+          flex: 0 0 auto;
+          width: 52px;
+          height: 44px;
+          padding: 0;
+          border-radius: 13px;
+          font-size: 8px;
+          letter-spacing: .06em;
+        }
+
+        .phase3-offline {
+          position: absolute;
+          z-index: 12;
+          left: 50%;
+          bottom: 8px;
+          transform: translateX(-50%);
+          margin: 0;
+        }
+
+        .phase3-menu.pc-sections-open .phase3-pc-nav button[data-pc-action="skins"],
+        .phase3-menu.pc-sections-open .phase3-pc-nav button[data-pc-action="missions"] {
+          border-color: var(--accent);
+        }
+      }
+
       @media(max-width:620px){.phase3-columns{grid-template-columns:1fr}}
       @media(max-width:420px){.phase3-menu-card{padding:15px}.phase3-title{font-size:29px}}
       @media(max-height:620px) and (orientation:landscape){.phase3-menu{align-items:flex-start}.phase3-menu-card{margin:6px 0}.phase3-brand{margin-bottom:9px}.phase3-logo{width:42px;height:42px}.phase3-title{font-size:25px}.phase3-columns{grid-template-columns:1fr 1fr}.phase3-panel{padding:10px}}
@@ -737,10 +1047,19 @@
     menu.innerHTML = `
       <div class="phase3-menu-card glass-panel border-neon">
         <div class="phase3-brand">
-          <img src="./icon.svg" alt="Blohsh" class="phase3-logo">
+          <img src="./icon.svg" alt="Logo oficial Blohsh Blast" class="phase3-logo">
           <h1 class="phase3-title">BLOHSH<br>BLAST</h1>
-          <p class="phase3-subtitle">Puzzle Arcade // Phase 3</p>
+          <p class="phase3-subtitle">PUZZLE ARCADE // PC EDITION</p>
         </div>
+
+        <nav class="phase3-pc-nav" aria-label="Menu principal">
+          <button type="button" data-pc-action="play">PLAY</button>
+          <button type="button" data-pc-action="modes">MODOS DE JOGO</button>
+          <button type="button" data-pc-action="skins">SKINS</button>
+          <button type="button" data-pc-action="missions">MISSÕES</button>
+          <button type="button" data-pc-action="daily">DAILY CHALLENGE</button>
+          <button type="button" data-pc-action="stats">ESTATÍSTICAS</button>
+        </nav>
 
         <div class="phase3-profile">
           <div class="phase3-profile-row">
@@ -769,7 +1088,7 @@
           </div>
         </div>
 
-        <div class="phase3-panel" style="margin-top:12px">
+        <div class="phase3-panel phase3-leaderboard-panel" style="margin-top:12px">
           <div class="phase3-section-title">Leaderboard local</div>
           <div id="phase3-leaderboard" class="phase3-leaderboard"></div>
           <div class="phase3-nickname">
