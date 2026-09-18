@@ -1660,6 +1660,19 @@
     function endDrag(event, cancelled = false) {
       if (!isDragging || !event || event.pointerId !== dragPointerId) return;
 
+      if (cancelled) {
+        const slot = rackSlots[dragPieceIndex];
+        isDragging = false;
+        dragPointerId = null;
+        draggingContainer.style.display = 'none';
+        clearHints();
+        if (slot) slot.classList.remove('hidden-slot');
+        dragPieceIndex = -1;
+        dragMatrix = null;
+        touchOffsetY = 0;
+        return;
+      }
+
       const gridPos = getGridPosition(event.clientX, event.clientY);
       const pieceIndex = dragPieceIndex;
       const pieceMatrix = dragMatrix;
