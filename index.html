@@ -1251,6 +1251,11 @@
         }
       }
 
+      if (bestRack && bestRack.every(piece => !canPlaceAnywhere(piece)) && canPlayAnyShape()) {
+        const playableShapes = SHAPES.filter(canPlaceAnywhere);
+        bestRack[0] = playableShapes[Math.floor(Math.random() * playableShapes.length)];
+      }
+
       return bestRack || [getRandomShape(), getRandomShape(), getRandomShape()];
     }
 
