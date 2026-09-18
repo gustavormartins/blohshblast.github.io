@@ -707,7 +707,9 @@
       .phase3-nickname{display:flex;gap:8px;margin-top:10px}
       #phase3-nickname{width:100%;border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);background:rgba(0,0,0,.3);color:var(--text-main);border-radius:12px;padding:9px 11px;font:inherit;font-size:10px}
       #phase3-nickname:focus{outline:2px solid var(--accent);outline-offset:1px}
-      .phase3-actions{display:flex;gap:8px;margin-top:11px}
+.phase3-actions{display:flex;gap:8px;margin-top:11px}
+      .phase3-gameover-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+      .phase3-gameover-actions .restart-button,.phase3-gameover-actions .menu-action{flex:1;min-width:130px}
       .phase3-action{flex:1;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);background:transparent;color:var(--text-main);padding:10px;border-radius:12px;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
       .phase3-action:hover,.phase3-action:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
       .phase3-offline{margin:10px 0 0;text-align:center;color:var(--text-muted);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
@@ -975,8 +977,29 @@
     const originalGameMenu = $('phase3-menu-game');
     if (originalGameMenu) originalGameMenu.addEventListener('click', showMenu);
 
-    if ($('gameover-menu')) $('gameover-menu').addEventListener('click', showMenu);
-    if ($('restart-button')) $('restart-button').addEventListener('click', () => startGame(P3.mode));
+    const legacyGameOverButton = $('game-over-modal')?.querySelector('button');
+    if (legacyGameOverButton) {
+      legacyGameOverButton.removeAttribute('onclick');
+      legacyGameOverButton.id = 'phase3-restart';
+      legacyGameOverButton.innerText = 'Jogar Novamente';
+      legacyGameOverButton.className = 'primary-button restart-button';
+      legacyGameOverButton.addEventListener('click', () => startGame(P3.mode));
+
+      const menuBtn = document.createElement('button');
+      menuBtn.type = 'button';
+      menuBtn.id = 'phase3-gameover-menu';
+      menuBtn.className = 'menu-action';
+      menuBtn.innerText = 'Menu Principal';
+      menuBtn.addEventListener('click', showMenu);
+
+      const actionWrap = legacyGameOverButton.parentElement;
+      if (actionWrap) {
+        actionWrap.classList.add('phase3-gameover-actions');
+        actionWrap.appendChild(menuBtn);
+      }
+    }
+
+    if ($('phase3-close-menu')) $('phase3-close-menu').addEventListener('click', () => startGame('classic'));
 
     // Phase-2 game-over handlers can remain; our handler guards duplicate leaderboard entries.
   }
