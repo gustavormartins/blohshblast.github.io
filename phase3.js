@@ -427,10 +427,20 @@
   function updateDeviceProfile() {
     const device = detectDevice();
     const mobile = device === 'mobile';
+    P3.device = device;
+
+    document.documentElement.dataset.device = device;
+    document.body.dataset.device = device;
     document.body.classList.toggle('device-mobile', mobile);
     document.body.classList.toggle('device-pc', !mobile);
+
     const menu = $('phase3-menu');
     if (menu) menu.dataset.device = device;
+
+    const deviceLabel = $('phase3-device');
+    if (deviceLabel) {
+      deviceLabel.innerText = mobile ? 'MOBILE // TOUCH' : 'PC // DESKTOP';
+    }
 
     const subtitle = document.querySelector('.phase3-subtitle');
     if (subtitle) subtitle.innerText = mobile
@@ -728,6 +738,7 @@
       .phase3-gameover-actions .restart-button,.phase3-gameover-actions .menu-action{flex:1;min-width:130px}
       .phase3-action{flex:1;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);background:transparent;color:var(--text-main);padding:10px;border-radius:12px;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
       .phase3-action:hover,.phase3-action:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+      .phase3-device{margin:6px 0 0;text-align:center;color:var(--accent);font-size:8px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 0 8px rgba(57,255,20,.35)}
       .phase3-offline{margin:10px 0 0;text-align:center;color:var(--text-muted);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
       .phase3-toast{position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:300;padding:9px 14px;border:1px solid var(--accent);border-radius:999px;background:rgba(0,0,0,.82);color:var(--accent);font:700 10px var(--font-main);letter-spacing:.1em;box-shadow:0 0 24px color-mix(in srgb,var(--accent) 35%,transparent);animation:p3Toast 1900ms ease forwards;pointer-events:none}
       @keyframes p3Toast{0%{opacity:0;transform:translate(-50%,8px) scale(.92)}10%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-22px) scale(1.02)}}
@@ -1799,6 +1810,7 @@
           <button id="phase3-menu-sound" class="phase3-action" type="button" aria-label="Som">SFX ON</button>
           <button id="phase3-close-menu" class="phase3-action" type="button" aria-label="Fechar menu">Fechar</button>
         </div>
+        <p id="phase3-device" class="phase3-device" aria-live="polite">DETECTING DEVICE...</p>
         <p id="phase3-offline" class="phase3-offline">Verificando modo offline...</p>
       </div>
     `;
