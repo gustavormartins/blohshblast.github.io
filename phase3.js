@@ -209,7 +209,7 @@
       showMiniToast(`LEVEL UP // NÍVEL ${P3.progression.level}`);
     }
 
-    renderMenu();
+    if (document.body.classList.contains('phase3-menu-open')) renderMenu();
   }
 
   function loadMissions() {
@@ -257,7 +257,7 @@
     });
 
     writeJSON(P3.MISSIONS_KEY, P3.missions);
-    renderMissions();
+    if (document.body.classList.contains('phase3-menu-open')) renderMissions();
   }
 
   function loadDaily() {
@@ -279,7 +279,7 @@
     P3.leaderboard.sort((a, b) => b.score - a.score);
     P3.leaderboard = P3.leaderboard.slice(0, 50);
     writeJSON(P3.LEADERBOARD_KEY, P3.leaderboard);
-    renderLeaderboard();
+    if (document.body.classList.contains('phase3-menu-open')) renderLeaderboard();
   }
 
   function recordScore(finalScore) {
@@ -335,9 +335,21 @@
     P3.rngState = P3.mode === 'daily' ? hashString(P3.daily.date + ':game') : null;
     P3.gameEnded = false;
 
+    // Hard reset every transient gameplay state before a new run.
+    isDragging = false;
+    dragPieceIndex = -1;
+    dragMatrix = null;
+    dragPointerId = null;
+    touchOffsetY = 0;
+    draggingContainer.style.display = 'none';
+    clearHints();
+
     board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
     score = 0;
-    if (typeof scoreAnimationId !== 'undefined' && scoreAnimationId) cancelAnimationFrame(scoreAnimationId);
+    if (typeof scoreAnimationId !== 'undefined' && scoreAnimationId) {
+      cancelAnimationFrame(scoreAnimationId);
+      scoreAnimationId = null;
+    }
     if (typeof setDisplayedScore === 'function') setDisplayedScore(0);
     else if ($('score-display')) $('score-display').innerText = '0';
     rackPieces = [null, null, null];
@@ -452,6 +464,19 @@
     toast.innerText = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 1900);
+  }
+
+  function updateDeviceProfile() {
+    const mobile = window.matchMedia('(max-width: 900px)').matches;
+    const device = mobile ? 'mobile' : 'pc';
+    document.body.classList.toggle('device-mobile', mobile);
+    document.body.classList.toggle('device-pc', !mobile);
+    const menu = $('phase3-menu');
+    if (menu) menu.dataset.device = device;
+    const subtitle = document.querySelector('.phase3-subtitle');
+    if (subtitle) subtitle.innerText = mobile
+      ? 'PUZZLE ARCADE // MOBILE EDITION'
+      : 'PUZZLE ARCADE // PC EDITION';
   }
 
   function renderProgress() {
@@ -1994,6 +2019,8 @@
     patchExistingUI();
     patchEngine();
     setupMenuEvents();
+    updateDeviceProfile();
+    window.addEventListener('resize', updateDeviceProfile);
 
     document.body.classList.add('phase3-menu-open');
     applyPhase3Skin();
