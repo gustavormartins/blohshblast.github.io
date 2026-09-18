@@ -8,7 +8,7 @@ Joga, diverte-te e contribui para o código! 🚀
 
 O Blohsh Blast é um jogo de lógica onde o objetivo é encaixar peças geradas aleatoriamente numa grelha de 8x8. O jogo termina quando não houver mais espaço para colocar as peças disponíveis.
 
-Este projeto foi construído com a simplicidade em mente: tudo funciona num único ficheiro HTML. Sem bases de dados complexas, sem servidores, apenas diversão gratuita e imediata (o que é ótimo para a carteira!).
+Este projeto foi construído com a simplicidade em mente: o núcleo do jogo continua em HTML/CSS/JavaScript, com uma camada de produto separada para progressão, modos, PWA e armazenamento local.
 
 ✨ Funcionalidades
 
@@ -20,7 +20,7 @@ Totalmente Responsivo: Joga perfeitamente no computador, tablet ou telemóvel (c
 
 High Score: O teu recorde é guardado localmente no teu navegador (via localStorage).
 
-Zero Dependências Locais: Funciona diretamente no browser. Usa apenas Tailwind CSS via CDN para estilização rápida.
+Execução leve: funciona diretamente no browser e não depende de Tailwind/CDN para o layout principal.
 
 🛠️ Tecnologias Utilizadas
 
@@ -32,7 +32,7 @@ Vanilla JavaScript (Lógica do jogo, sistema de arrastar/largar e deteção de c
 
 🚀 Como Executar Localmente
 
-Como o jogo é composto por um único ficheiro, executá-lo é incrivelmente simples:
+O projeto é estático e pode ser executado localmente com um servidor HTTP simples:
 
 Faz o clone deste repositório:
 
@@ -65,3 +65,25 @@ Abre um Pull Request.
 📝 Licença
 
 Este projeto está licenciado sob a licença MIT - vê o ficheiro LICENSE para mais detalhes. É totalmente livre e gratuito para a comunidade!
+
+
+## Fase 3 — Produto
+
+A experiência agora inclui menu inicial, modos Classic/Zen/Hardcore/Daily, progressão permanente por XP, skins desbloqueáveis, missões diárias, desafio diário com seed determinística, PWA instalável, cache offline e leaderboard local.
+
+### Armazenamento
+
+A progressão, nickname, missões, scores e preferências são persistidos no navegador via localStorage. O leaderboard desta versão é deliberadamente local; a sincronização online pode ser adicionada posteriormente com um backend autenticado.
+
+### PWA / Offline
+
+O app usa `manifest.webmanifest`, `sw.js`, `icon.svg` e `phase3.js`. Depois do primeiro carregamento, o shell do jogo pode ser aberto sem conexão.
+
+
+### Estrutura
+
+- `index.html` — motor e interface principal do puzzle.
+- `phase3.js` — menu, modos, progressão, missões, Daily e leaderboard local.
+- `manifest.webmanifest` — configuração PWA.
+- `sw.js` — cache do app shell para uso offline.
+- `icon.svg` — ícone local do jogo.
