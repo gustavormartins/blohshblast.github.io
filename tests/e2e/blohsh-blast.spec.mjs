@@ -76,7 +76,18 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await page.mouse.move(boardBox.x + boardBox.width / 2, boardBox.y + boardBox.height / 2, { steps: 12 });
     await page.mouse.up();
     await expect(slot).toBeEmpty();
-    await expect(page.locator('#score-display')).not.toHaveText('0');
+    const stateAfterDrag = await page.evaluate(() => ({
+      score,
+      displayedScore,
+      addScoreType: typeof window.addScore,
+      addScoreSource: String(window.addScore).slice(0, 120),
+      boardFilled: board.some(row => row.some(cell => cell === 1)),
+      rack0Empty: rackPieces[0] === null
+    }));
+    if (stateAfterDrag.score <= 0) {
+      throw new Error('Drag placement state: ' + JSON.stringify(stateAfterDrag));
+    }
+    await expect.poll(() => page.evaluate(() => score)).toBeGreaterThan(0);
 
     // Deterministic clear + Perfect Clear.
     await configurePerfectClear(page);
