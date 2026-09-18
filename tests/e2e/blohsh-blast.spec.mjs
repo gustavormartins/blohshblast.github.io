@@ -164,6 +164,8 @@ test.describe('Blohsh Blast — core gameplay', () => {
       const daily = JSON.parse(localStorage.getItem('blohshBlastDailyV3') || 'null');
       return daily?.best || 0;
     })).toBe(321);
+    await page.locator('#phase3-restart').click();
+    await expect(page.locator('#game-over-modal')).toHaveClass(/modal-hidden/);
 
     // Leaderboard + Daily best are recorded once at game over.
     const persisted = await page.evaluate(() => ({
