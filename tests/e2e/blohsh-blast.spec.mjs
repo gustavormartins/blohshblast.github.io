@@ -8,7 +8,7 @@ async function assertNoPageErrors(page, errors) {
 
 async function installErrorCapture(page) {
   const errors = [];
-  page.on('pageerror', error => errors.push(error));
+  page.on('pageerror', error => errors.push(error.stack || String(error)));
   return errors;
 }
 
