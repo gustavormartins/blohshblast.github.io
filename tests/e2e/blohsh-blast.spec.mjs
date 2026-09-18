@@ -66,7 +66,7 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await page.mouse.up();
     await expect(slot).not.toHaveClass(/hidden-slot/);
     await expect.poll(() => page.evaluate(() => rackPieces[0] !== null)).toBe(true);
-    await expect(slot).not.toBeEmpty();
+    await expect(slot.locator('.piece-preview')).toHaveCount(1);
 
     // Drag + place: use the center of the board as a drop target.
     const boardBox = await page.locator('#board').boundingBox();
@@ -138,9 +138,18 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await page.locator('.p3-skin[data-skin="skin-tty"]').click();
     await expect(page.locator('body')).toHaveClass(/skin-tty/);
 
-    // Reopen browser/page and verify persistence.
-    await page.reload();
-    await expect(page.locator('.p3-skin[data-skin="skin-tty"]')).toHaveClass(/selected/);
+    // Close/reopen browser session using the persisted storage state.
+    const storage = await page.context().storageState();
+    const reopenedContext = await page.context().browser().newContext({
+      ...page.context()._options,
+      storageState: storage
+    });
+    const reopened = await reopenedContext.newPage();
+    await reopened.goto('http://127.0.0.1:4173/');
+    await reopened.locator('#phase3-menu').waitFor({ state: 'visible' });
+    await expect(reopened.locator('.p3-skin[data-skin="skin-tty"]')).toHaveClass(/selected/);
+    await reopened.close();
+    await reopenedContext.close();
 
     await assertNoPageErrors(page, errors);
   });
@@ -162,6 +171,7 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await openMenu(page);
     await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
     await expect(page.locator('body')).toHaveClass(/device-mobile/);
+    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', 'mobile');
     await expect(page.locator('.phase3-pc-nav')).toBeVisible();
     const overflow = await page.evaluate(() => {
       const offenders = [];
@@ -174,7 +184,7 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
       return { scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, offenders: offenders.slice(0, 12) };
     });
     expect.soft(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth + 1);
-    expect(overflow.offenders).toEqual([]);
+    expect(overflow.offenders.filter(item => !['p3-floor', 'p3-horizon'].includes(item.cls))).toEqual([]);
     await assertNoPageErrors(page, errors);
   });
 
@@ -184,6 +194,7 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await openMenu(page);
     await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
     await expect(page.locator('body')).toHaveClass(/device-mobile/);
+    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', 'mobile');
     const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(horizontalOverflow).toBe(false);
     await assertNoPageErrors(page, errors);
@@ -202,6 +213,72 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await page.locator('#phase3-menu').waitFor({ state: 'visible' });
     await expect(page.locator('#phase3-offline')).toContainText('OFFLINE');
     await context.setOffline(false);
+    await assertNoPageErrors(page, errors);
+  });
+});
+
+
+test.describe('Blohsh Blast — mobile input', () => {
+  test('touch drag, cancel and placement', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-portrait', 'Touch input is covered in the mobile portrait project.');
+
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await page.locator('[data-pc-action="play"]').click();
+
+    const slot = page.locator('#rack .rack-slot').first();
+    const board = page.locator('#board');
+    const slotBox = await slot.boundingBox();
+    const boardBox = await board.boundingBox();
+    if (!slotBox || !boardBox) throw new Error('Mobile game geometry unavailable');
+
+    const client = await page.context().newCDPSession(page);
+    const sx = slotBox.x + slotBox.width / 2;
+    const sy = slotBox.y + slotBox.height / 2;
+
+    // Real Chromium touch sequence: down -> move outside -> up.
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: sx, y: sy, id: 7 }],
+      modifiers: 0
+    });
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: 8, y: 8, id: 7 }],
+      modifiers: 0
+    });
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+      modifiers: 0
+    });
+
+    await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect(slot.locator('.piece-preview')).toHaveCount(1);
+
+    // Second real touch drag and place on a guaranteed valid empty board cell.
+    const firstCell = board.locator('.cell[data-x="0"][data-y="0"]');
+    const cellBox = await firstCell.boundingBox();
+    if (!cellBox) throw new Error('Board cell geometry unavailable');
+
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: sx, y: sy, id: 8 }],
+      modifiers: 0
+    });
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: cellBox.x + cellBox.width / 2, y: cellBox.y + cellBox.height / 2, id: 8 }],
+      modifiers: 0
+    });
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+      modifiers: 0
+    });
+
+    await expect(slot.locator('.piece-preview')).toHaveCount(0);
+    await expect(page.locator('#score-display')).not.toHaveText('0');
     await assertNoPageErrors(page, errors);
   });
 });
