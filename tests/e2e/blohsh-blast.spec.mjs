@@ -48,12 +48,16 @@ async function makeNonClearMove(page) {
 
 test.describe('Blohsh Blast — core gameplay', () => {
   test('core gameplay state machine', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pc', 'Desktop project owns the full deterministic core gameplay suite.');
 
     const errors = await installErrorCapture(page);
     await openMenu(page);
 
-    await expect(page.locator('.phase3-subtitle')).toContainText('PC EDITION');
+    const isPC = testInfo.project.name === 'pc';
+    const expectedEdition = isPC ? 'PC EDITION' : 'MOBILE EDITION';
+    const expectedDevice = isPC ? 'pc' : 'mobile';
+    await expect(page.locator('.phase3-subtitle')).toContainText(expectedEdition);
+    await expect(page.locator('#phase3-device')).toContainText(isPC ? 'PC' : 'MOBILE');
+    await expect.poll(() => page.evaluate(() => document.body.dataset.device)).toBe(expectedDevice);
     await expect.poll(() => page.evaluate(() => stats.gamesPlayed)).toBe(0);
     await startClassic(page);
     await expect.poll(() => page.evaluate(() => stats.gamesPlayed)).toBe(1);
@@ -202,22 +206,29 @@ test.describe('Blohsh Blast — core gameplay', () => {
 });
 
 test.describe('Blohsh Blast — device + PWA/offline', () => {
-  test('PC detection and desktop layout', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'pc', 'PC-only device profile test.');
+  test('device detection and base responsive layout', async ({ page }, testInfo) => {
     const errors = await installErrorCapture(page);
     await openMenu(page);
-    await expect(page.locator('.phase3-subtitle')).toContainText('PC EDITION');
-    await expect(page.locator('.phase3-menu')).toBeVisible();
+    const isPC = testInfo.project.name === 'pc';
+    await expect(page.locator('.phase3-subtitle')).toContainText(isPC ? 'PC EDITION' : 'MOBILE EDITION');
+    await expect(page.locator('#phase3-device')).toContainText(isPC ? 'PC' : 'MOBILE');
+    await expect(page.locator('body')).toHaveClass(isPC ? /device-pc/ : /device-mobile/);
+    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', isPC ? 'pc' : 'mobile');
+    await expect(page.locator('.phase3-pc-nav')).toBeVisible();
     await assertNoPageErrors(page, errors);
   });
 
-  test('mobile portrait detection and responsive menu', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile-portrait', 'Portrait-only device profile test.');
+  test('mobile portrait contract and responsive menu', async ({ page }, testInfo) => {
     const errors = await installErrorCapture(page);
     await openMenu(page);
-    await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
-    await expect(page.locator('body')).toHaveClass(/device-mobile/);
-    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', 'mobile');
+    const isPC = testInfo.project.name === 'pc';
+    if (testInfo.project.name === 'mobile-portrait') {
+      const size = await page.viewportSize();
+      expect(size.height).toBeGreaterThan(size.width);
+    }
+    await expect(page.locator('.phase3-subtitle')).toContainText(isPC ? 'PC EDITION' : 'MOBILE EDITION');
+    await expect(page.locator('body')).toHaveClass(isPC ? /device-pc/ : /device-mobile/);
+    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', isPC ? 'pc' : 'mobile');
     await expect(page.locator('.phase3-pc-nav')).toBeVisible();
     const overflow = await page.evaluate(() => {
       const offenders = [];
@@ -234,13 +245,17 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await assertNoPageErrors(page, errors);
   });
 
-  test('mobile landscape detection', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile-landscape', 'Landscape-only device profile test.');
+  test('mobile landscape contract', async ({ page }, testInfo) => {
     const errors = await installErrorCapture(page);
     await openMenu(page);
-    await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
-    await expect(page.locator('body')).toHaveClass(/device-mobile/);
-    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', 'mobile');
+    const isPC = testInfo.project.name === 'pc';
+    if (testInfo.project.name === 'mobile-landscape') {
+      const size = await page.viewportSize();
+      expect(size.width).toBeGreaterThan(size.height);
+    }
+    await expect(page.locator('.phase3-subtitle')).toContainText(isPC ? 'PC EDITION' : 'MOBILE EDITION');
+    await expect(page.locator('body')).toHaveClass(isPC ? /device-pc/ : /device-mobile/);
+    await expect(page.locator('#phase3-menu')).toHaveAttribute('data-device', isPC ? 'pc' : 'mobile');
     const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(horizontalOverflow).toBe(false);
     await assertNoPageErrors(page, errors);
@@ -266,10 +281,10 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
 
 test.describe('Blohsh Blast — mobile input', () => {
   test('touch drag, cancel and placement', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile-portrait', 'Touch input is covered in the mobile portrait project.');
 
     const errors = await installErrorCapture(page);
     await openMenu(page);
+    await expect(page.locator('#phase3-device')).toContainText(testInfo.project.name === 'pc' ? 'PC' : 'MOBILE');
     await page.locator('[data-pc-action="play"]').click();
 
     const slot = page.locator('#rack .rack-slot').first();
