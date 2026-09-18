@@ -1,8 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 620" role="img" aria-labelledby="title">
-  <title id="title">Blohsh Blast official logo</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 360" role="img" aria-labelledby="title desc">
+  <title id="title">Blohsh Blast</title>
+  <desc id="desc">Blohsh mascot matching the vertical silhouette from the official menu prototype.</desc>
   <g fill="#39ff14">
-    <circle cx="180" cy="82" r="45"/>
-    <path d="M124 147C151 125 183 119 215 128L318 158C336 163 347 177 343 195L337 222C334 236 323 245 310 242L291 238L295 307C296 323 288 335 274 339L262 342L265 548C265 566 254 579 237 579H219C202 579 191 566 191 548V365L173 360V477C173 495 162 507 145 507H126C109 507 98 495 98 477V271C98 255 92 245 80 232L61 211C51 200 52 184 63 174C75 163 91 161 104 168L133 183L117 156C113 149 118 145 124 147Z"/>
-    <path d="M302 180L352 193C365 197 372 209 368 223L343 302C339 315 326 322 313 318L298 313C285 309 278 297 282 284L306 208C310 196 304 187 302 180Z"/>
+    <circle cx="83" cy="58" r="27"/>
+
+    <!-- Main slanted body / shoulder -->
+    <path d="M52 93 L144 51 C157 45 170 52 170 66 L170 136
+             C170 151 160 160 147 160 C134 160 125 151 125 136
+             L125 103 L106 111 L106 168 L52 168 Z"/>
+
+    <!-- Left arm -->
+    <path d="M53 106 L53 170 C53 184 44 193 32 193
+             C19 193 11 184 11 170 L11 132
+             C11 119 18 110 29 106 C37 103 46 103 53 106 Z"/>
+
+    <!-- Left leg -->
+    <path d="M53 145 L87 145 L87 320
+             C87 337 76 348 61 348 C45 348 34 337 34 320
+             L34 177 C34 159 41 148 53 145 Z"/>
+
+    <!-- Right leg -->
+    <path d="M91 123 L126 123 L126 276
+             C126 293 115 304 101 304 C86 304 76 293 76 276
+             L76 153 C76 137 82 127 91 123 Z"/>
   </g>
 </svg>
