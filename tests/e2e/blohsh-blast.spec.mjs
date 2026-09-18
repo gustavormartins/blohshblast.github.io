@@ -46,8 +46,10 @@ async function makeNonClearMove(page) {
   });
 }
 
-test.describe('Blohsh Blast — PC smoke / gameplay', () => {
-  test('core gameplay state machine', async ({ page }) => {
+test.describe('Blohsh Blast — core gameplay', () => {
+  test('core gameplay state machine', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pc', 'Desktop project owns the full deterministic core gameplay suite.');
+
     const errors = await installErrorCapture(page);
     await openMenu(page);
 
@@ -63,6 +65,7 @@ test.describe('Blohsh Blast — PC smoke / gameplay', () => {
     await page.mouse.move(20, 20, { steps: 8 });
     await page.mouse.up();
     await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect.poll(() => page.evaluate(() => rackPieces[0] !== null)).toBe(true);
     await expect(slot).not.toBeEmpty();
 
     // Drag + place: use the center of the board as a drop target.
@@ -144,7 +147,8 @@ test.describe('Blohsh Blast — PC smoke / gameplay', () => {
 });
 
 test.describe('Blohsh Blast — device + PWA/offline', () => {
-  test('PC detection and desktop layout', async ({ page }) => {
+  test('PC detection and desktop layout', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'pc', 'PC-only device profile test.');
     const errors = await installErrorCapture(page);
     await openMenu(page);
     await expect(page.locator('.phase3-subtitle')).toContainText('PC EDITION');
@@ -152,18 +156,30 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await assertNoPageErrors(page, errors);
   });
 
-  test('mobile portrait detection and responsive menu', async ({ page }) => {
+  test('mobile portrait detection and responsive menu', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-portrait', 'Portrait-only device profile test.');
     const errors = await installErrorCapture(page);
     await openMenu(page);
     await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
     await expect(page.locator('body')).toHaveClass(/device-mobile/);
     await expect(page.locator('.phase3-pc-nav')).toBeVisible();
-    const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-    expect(horizontalOverflow).toBe(false);
+    const overflow = await page.evaluate(() => {
+      const offenders = [];
+      for (const el of document.querySelectorAll('*')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.right > window.innerWidth + 1 || rect.left < -1) {
+          offenders.push({ tag: el.tagName, id: el.id, cls: String(el.className).slice(0, 80), left: Math.round(rect.left), right: Math.round(rect.right) });
+        }
+      }
+      return { scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, offenders: offenders.slice(0, 12) };
+    });
+    expect.soft(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth + 1);
+    expect(overflow.offenders).toEqual([]);
     await assertNoPageErrors(page, errors);
   });
 
-  test('mobile landscape detection', async ({ page }) => {
+  test('mobile landscape detection', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-landscape', 'Landscape-only device profile test.');
     const errors = await installErrorCapture(page);
     await openMenu(page);
     await expect(page.locator('.phase3-subtitle')).toContainText('MOBILE EDITION');
