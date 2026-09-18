@@ -140,10 +140,7 @@ test.describe('Blohsh Blast — core gameplay', () => {
 
     // Close/reopen browser session using the persisted storage state.
     const storage = await page.context().storageState();
-    const reopenedContext = await page.context().browser().newContext({
-      ...page.context()._options,
-      storageState: storage
-    });
+    const reopenedContext = await page.context().browser().newContext({ storageState: storage });
     const reopened = await reopenedContext.newPage();
     await reopened.goto('http://127.0.0.1:4173/');
     await reopened.locator('#phase3-menu').waitFor({ state: 'visible' });
@@ -257,7 +254,7 @@ test.describe('Blohsh Blast — mobile input', () => {
     await expect(slot.locator('.piece-preview')).toHaveCount(1);
 
     // Second real touch drag and place on a guaranteed valid empty board cell.
-    const firstCell = board.locator('.cell[data-x="0"][data-y="0"]');
+    const firstCell = board.locator('.cell[data-x="4"][data-y="4"]');
     const cellBox = await firstCell.boundingBox();
     if (!cellBox) throw new Error('Board cell geometry unavailable');
 
@@ -268,7 +265,7 @@ test.describe('Blohsh Blast — mobile input', () => {
     });
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
-      touchPoints: [{ x: cellBox.x + cellBox.width / 2, y: cellBox.y + cellBox.height / 2, id: 8 }],
+      touchPoints: [{ x: cellBox.x + cellBox.width / 2, y: cellBox.y + cellBox.height / 2 + 58, id: 8 }],
       modifiers: 0
     });
     await client.send('Input.dispatchTouchEvent', {
