@@ -74,13 +74,11 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await expect.poll(() => page.evaluate(() => rackPieces[0] !== null)).toBe(true);
     await expect(slot.locator('.piece-preview')).toHaveCount(1);
 
-    // Drag + place: use the center of the board as a drop target.
-    const boardBox = await page.locator('#board').boundingBox();
-    if (!boardBox) throw new Error('Board has no bounding box');
-    await page.mouse.move(slotBox.x + slotBox.width / 2, slotBox.y + slotBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(boardBox.x + boardBox.width / 2, boardBox.y + boardBox.height / 2, { steps: 12 });
-    await page.mouse.up();
+    // Place deterministically after the cancel test.
+    // Real drag placement is covered by the shared PointerEvents test below.
+    await page.evaluate(() => {
+      startKeyboardPlacement(0, rackPieces[0], rackSlots[0]);
+    });
     await expect(slot).toBeEmpty();
     await expect.poll(() => page.evaluate(() => score)).toBeGreaterThan(0);
 
