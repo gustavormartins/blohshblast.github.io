@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blohsh-blast-v5';
+const CACHE_NAME = 'blohsh-blast-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -31,22 +31,44 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
-      return fetch(event.request)
-        .then(response => {
-          if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => {
-          if (event.request.mode === 'navigate') return caches.match('./index.html');
-          return Response.error();
-        });
-    })
-  );
+  const isAppCode = /\.(?:html?|js|css)$/.test(url.pathname);
+  const isNavigation = event.request.mode === 'navigate';
+
+  const networkFirst = async () => {
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch (_) {
+      return caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        if (isNavigation) return caches.match('./index.html');
+        return Response.error();
+      });
+    }
+  };
+
+  const cacheFirst = async () => {
+    const cached = await caches.match(event.request);
+    if (cached) return cached;
+
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch (_) {
+      return Response.error();
+    }
+  };
+
+  event.respondWith(isNavigation || isAppCode ? networkFirst() : cacheFirst());
 });
