@@ -135,6 +135,7 @@ test.describe('Blohsh Blast — core gameplay', () => {
       window.location.reload();
     });
     await page.locator('#phase3-menu').waitFor({ state: 'visible' });
+    await page.locator('[data-pc-action="skins"]').click();
     await page.locator('.p3-skin[data-skin="skin-tty"]').click();
     await expect(page.locator('body')).toHaveClass(/skin-tty/);
 
