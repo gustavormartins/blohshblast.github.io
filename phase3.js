@@ -643,10 +643,12 @@
         }
 
         if (action === 'skins' || action === 'missions') {
+          const alreadyOpen = menu.classList.contains('pc-sections-open');
           menu.classList.remove('pc-modes-open');
-          menu.classList.add('pc-sections-open');
+          menu.classList.toggle('pc-sections-open', !alreadyOpen);
           const target = action === 'skins' ? $('phase3-skins') : $('phase3-missions');
-          target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (!alreadyOpen) target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
         }
       });
     });
@@ -1035,6 +1037,679 @@
         }
       }
 
+
+      /* --- UNIFIED MENU V2: same neon arcade experience on PC + mobile --- */
+      #phase3-menu {
+        isolation: isolate;
+        padding: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 40%, rgba(57,255,20,.15), transparent 32%),
+          radial-gradient(circle at 50% 100%, rgba(57,255,20,.1), transparent 44%),
+          #010201;
+      }
+
+      #phase3-menu::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, rgba(57,255,20,.02) 1px, transparent 1px),
+          linear-gradient(0deg, rgba(57,255,20,.018) 1px, transparent 1px);
+        background-size: 52px 52px;
+        animation: p3AmbientGrid 9s linear infinite;
+        opacity: .6;
+      }
+
+      #phase3-menu::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(0,0,0,0) 0 62%, rgba(57,255,20,.04) 84%, rgba(57,255,20,.1) 100%);
+      }
+
+      .phase3-menu-card {
+        position: relative;
+        width: 100vw;
+        height: 100dvh;
+        max-height: none;
+        overflow: hidden;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .p3-scene {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .p3-scene::before {
+        content: '';
+        position: absolute;
+        inset: -18%;
+        background:
+          radial-gradient(circle at 50% 48%, rgba(57,255,20,.13), transparent 19%),
+          radial-gradient(circle at 50% 84%, rgba(57,255,20,.08), transparent 30%);
+        filter: blur(10px);
+        animation: p3GlowBreath 4.6s ease-in-out infinite alternate;
+      }
+
+      .p3-light-columns {
+        position: absolute;
+        inset: 0;
+        transform: translateZ(0);
+      }
+
+      .p3-light-columns i {
+        position: absolute;
+        left: var(--x);
+        bottom: 18%;
+        width: var(--w);
+        height: var(--h);
+        opacity: .48;
+        background: linear-gradient(180deg, transparent, rgba(57,255,20,.12) 28%, rgba(57,255,20,.82) 84%, rgba(57,255,20,.06));
+        box-shadow: 0 0 22px rgba(57,255,20,.14), 0 0 48px rgba(57,255,20,.1);
+        animation: p3ColumnPulse 4.8s ease-in-out var(--d) infinite;
+      }
+
+      .p3-light-columns i::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -7px;
+        width: 160%;
+        height: 18px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: rgba(57,255,20,.65);
+        filter: blur(7px);
+      }
+
+      .p3-floor {
+        position: absolute;
+        left: -12%;
+        right: -12%;
+        bottom: -12%;
+        height: 38%;
+        background:
+          linear-gradient(to bottom, rgba(57,255,20,.14), transparent 18%),
+          repeating-linear-gradient(90deg, rgba(57,255,20,.18) 0 1px, transparent 1px 62px),
+          repeating-linear-gradient(0deg, rgba(57,255,20,.18) 0 1px, transparent 1px 42px);
+        transform-origin: bottom;
+        transform: perspective(430px) rotateX(62deg) translateY(12px);
+        opacity: .58;
+        animation: p3FloorDrift 6.5s linear infinite;
+      }
+
+      .p3-horizon {
+        position: absolute;
+        left: -10%;
+        right: -10%;
+        bottom: 24%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(57,255,20,.4) 12%, #39ff14 50%, rgba(57,255,20,.4) 88%, transparent);
+        box-shadow: 0 0 16px rgba(57,255,20,.5), 0 -8px 28px rgba(57,255,20,.08);
+        animation: p3HorizonPulse 2.8s ease-in-out infinite alternate;
+      }
+
+      .p3-particles {
+        position: absolute;
+        inset: 0;
+      }
+
+      .p3-particles i {
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        width: var(--s);
+        height: var(--s);
+        background: #39ff14;
+        box-shadow: 0 0 10px rgba(57,255,20,.72);
+        opacity: .42;
+        animation: p3ParticleFloat var(--dur) ease-in-out var(--delay) infinite;
+      }
+
+      .phase3-brand {
+        position: absolute;
+        z-index: 10;
+        top: 26px;
+        left: 34px;
+        margin: 0;
+        text-align: left;
+      }
+
+      .phase3-brand::after {
+        content: 'PLUG > DROP > BLAST';
+        display: block;
+        margin-top: 8px;
+        color: var(--accent);
+        font-size: 11px;
+        letter-spacing: .16em;
+        text-shadow: 0 0 9px var(--accent);
+      }
+
+      .phase3-title {
+        font-size: 44px;
+        line-height: .86;
+        letter-spacing: -.07em;
+        text-shadow: 0 0 8px var(--accent), 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
+      }
+
+      .phase3-subtitle {
+        margin-top: 10px;
+        font-size: 9px;
+        letter-spacing: .2em;
+      }
+
+      .phase3-logo {
+        position: fixed;
+        z-index: 4;
+        left: 50%;
+        top: 7vh;
+        width: 175px;
+        height: 255px;
+        object-fit: contain;
+        transform: translateX(-50%);
+        filter: drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 28px rgba(57,255,20,.34));
+        animation: p3LogoFloat 3.2s ease-in-out infinite;
+      }
+
+      .phase3-pc-nav {
+        position: absolute;
+        z-index: 12;
+        left: 50%;
+        top: 38%;
+        width: min(470px, 42vw);
+        transform: translateX(-50%);
+        display: grid;
+        gap: 9px;
+      }
+
+      .phase3-pc-nav button {
+        min-height: 54px;
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        align-items: center;
+        gap: 2px;
+        padding: 0 20px;
+        border: 1px solid var(--accent);
+        border-radius: 14px;
+        background: rgba(0,0,0,.56);
+        color: var(--text-main);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-align: left;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: inset 0 0 18px rgba(57,255,20,.03), 0 0 10px rgba(57,255,20,.06);
+        transition: transform 150ms ease, background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+        backdrop-filter: blur(6px);
+      }
+
+      .phase3-pc-nav button:hover,
+      .phase3-pc-nav button:focus-visible {
+        transform: translateY(-2px);
+        background: rgba(57,255,20,.1);
+        color: #fff;
+        box-shadow: 0 0 22px rgba(57,255,20,.2), inset 0 0 20px rgba(57,255,20,.06);
+        outline: none;
+      }
+
+      .phase3-pc-nav button[data-pc-action="play"] {
+        min-height: 70px;
+        background: var(--accent);
+        color: #010201;
+        box-shadow: 0 0 28px rgba(57,255,20,.34);
+        animation: p3PlayPulse 2.5s ease-in-out infinite;
+      }
+
+      .phase3-pc-nav button[data-pc-action="play"] .p3-nav-icon {
+        color: #010201;
+      }
+
+      .p3-nav-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        color: var(--accent);
+        font-size: 22px;
+        text-shadow: 0 0 8px currentColor;
+      }
+
+      .phase3-modes,
+      .phase3-columns {
+        display: none;
+      }
+
+      .phase3-menu.pc-modes-open .phase3-pc-nav,
+      .phase3-menu.pc-sections-open .phase3-pc-nav {
+        opacity: .18;
+        filter: blur(1px);
+        pointer-events: none;
+      }
+
+      .phase3-menu.pc-modes-open .phase3-modes {
+        position: absolute;
+        z-index: 20;
+        left: 50%;
+        top: 36%;
+        width: min(470px, calc(100vw - 30px));
+        transform: translateX(-50%);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        padding: 0;
+      }
+
+      .phase3-menu.pc-modes-open .phase3-mode {
+        min-height: 76px;
+        padding: 12px;
+        border: 1px solid var(--accent);
+        border-radius: 14px;
+        background: rgba(0,0,0,.84);
+        box-shadow: 0 0 14px rgba(57,255,20,.08);
+      }
+
+      .phase3-menu.pc-modes-open .phase3-mode strong {
+        font-size: 14px;
+        color: var(--accent);
+      }
+
+      .phase3-menu.pc-modes-open .phase3-mode span {
+        margin-top: 4px;
+        font-size: 8px;
+      }
+
+      .phase3-menu.pc-sections-open .phase3-columns {
+        position: absolute;
+        z-index: 21;
+        left: 50%;
+        top: 28%;
+        width: min(720px, calc(100vw - 30px));
+        max-height: 58vh;
+        overflow: auto;
+        transform: translateX(-50%);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 0;
+        margin: 0;
+      }
+
+      .phase3-menu.pc-sections-open .phase3-columns .phase3-panel {
+        min-width: 0;
+        background: rgba(0,0,0,.78);
+      }
+
+      .phase3-profile {
+        position: absolute;
+        z-index: 11;
+        left: 30px;
+        bottom: 24px;
+        width: 280px;
+        margin: 0;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(0,0,0,.58);
+        backdrop-filter: blur(12px);
+      }
+
+      .phase3-leaderboard-panel {
+        position: absolute !important;
+        z-index: 11;
+        right: 30px;
+        bottom: 24px;
+        width: 320px;
+        margin: 0 !important;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(0,0,0,.58);
+        backdrop-filter: blur(12px);
+      }
+
+      .phase3-actions {
+        position: absolute;
+        z-index: 14;
+        top: 28px;
+        right: 30px;
+        display: flex;
+        gap: 9px;
+        margin: 0;
+      }
+
+      .phase3-action {
+        flex: 0 0 auto;
+        width: 52px;
+        height: 44px;
+        padding: 0;
+        border-radius: 13px;
+        font-size: 0;
+        letter-spacing: 0;
+      }
+
+      #phase3-stats-button::before { content: '▥'; }
+      #phase3-menu-sound::before { content: '◖'; }
+      #phase3-close-menu::before { content: '×'; }
+
+      .phase3-action::before {
+        color: var(--accent);
+        font-size: 21px;
+        line-height: 1;
+        text-shadow: 0 0 8px var(--accent);
+      }
+
+      .phase3-offline {
+        position: absolute;
+        z-index: 12;
+        left: 50%;
+        bottom: 8px;
+        transform: translateX(-50%);
+        margin: 0;
+      }
+
+      @keyframes p3AmbientGrid {
+        0% { background-position: 0 0, 0 0; }
+        100% { background-position: 0 52px, 52px 0; }
+      }
+
+      @keyframes p3GlowBreath {
+        from { transform: scale(.96); opacity: .56; }
+        to { transform: scale(1.08); opacity: 1; }
+      }
+
+      @keyframes p3ColumnPulse {
+        0%, 100% { opacity: .2; transform: translateY(7%); filter: blur(.3px); }
+        50% { opacity: .62; transform: translateY(-4%); filter: blur(0); }
+      }
+
+      @keyframes p3FloorDrift {
+        from { transform: perspective(430px) rotateX(62deg) translateY(18px); }
+        to { transform: perspective(430px) rotateX(62deg) translateY(-4px); }
+      }
+
+      @keyframes p3HorizonPulse {
+        from { opacity: .42; transform: scaleX(.94); }
+        to { opacity: .9; transform: scaleX(1.02); }
+      }
+
+      @keyframes p3ParticleFloat {
+        0%,100% { opacity: .22; transform: translate3d(0,0,0) scale(1); }
+        50% { opacity: .9; transform: translate3d(0,-13px,0) scale(1.18); }
+      }
+
+      @keyframes p3LogoFloat {
+        0%,100% { transform: translateX(-50%) translateY(0) scale(1); }
+        50% { transform: translateX(-50%) translateY(-9px) scale(1.035); }
+      }
+
+      @keyframes p3PlayPulse {
+        0%,100% { box-shadow: 0 0 20px rgba(57,255,20,.24); }
+        50% { box-shadow: 0 0 36px rgba(57,255,20,.48), 0 0 60px rgba(57,255,20,.16); }
+      }
+
+      @media (max-width: 900px) {
+        .phase3-brand {
+          top: 17px;
+          left: 18px;
+        }
+
+        .phase3-title {
+          font-size: clamp(27px, 8vw, 35px);
+        }
+
+        .phase3-subtitle {
+          font-size: 7px;
+          letter-spacing: .13em;
+        }
+
+        .phase3-brand::after {
+          margin-top: 6px;
+          font-size: 8px;
+          letter-spacing: .12em;
+        }
+
+        .phase3-logo {
+          top: 11%;
+          width: min(94px, 24vw);
+          height: 142px;
+        }
+
+        .phase3-pc-nav {
+          top: 34%;
+          width: calc(100vw - 30px);
+          max-width: 470px;
+          gap: 7px;
+        }
+
+        .phase3-pc-nav button {
+          min-height: 47px;
+          grid-template-columns: 32px 1fr;
+          padding: 0 14px;
+          border-radius: 12px;
+          font-size: clamp(10px, 3.2vw, 14px);
+          letter-spacing: .07em;
+        }
+
+        .phase3-pc-nav button[data-pc-action="play"] {
+          min-height: 58px;
+        }
+
+        .p3-nav-icon {
+          font-size: 18px;
+        }
+
+        .phase3-profile {
+          left: 14px;
+          bottom: 14px;
+          width: min(185px, calc(50vw - 20px));
+          padding: 10px;
+          border-radius: 14px;
+        }
+
+        .phase3-level {
+          font-size: 10px;
+        }
+
+        .phase3-xp {
+          font-size: 8px;
+        }
+
+        .phase3-leaderboard-panel {
+          right: 14px;
+          bottom: 14px;
+          width: min(160px, calc(46vw - 16px));
+          padding: 10px;
+          border-radius: 14px;
+        }
+
+        .phase3-leaderboard-panel .phase3-section-title {
+          margin-top: 4px;
+          font-size: 7px;
+        }
+
+        .phase3-leaderboard-panel .p3-leader-row {
+          grid-template-columns: 18px 1fr auto;
+          gap: 4px;
+          font-size: 7px;
+        }
+
+        .phase3-leaderboard-panel .p3-leader-row small {
+          display: none;
+        }
+
+        .phase3-leaderboard-panel .p3-leader-row strong {
+          font-size: 8px;
+        }
+
+        .phase3-nickname {
+          display: none;
+        }
+
+        .phase3-actions {
+          top: 14px;
+          right: 14px;
+          gap: 6px;
+        }
+
+        .phase3-action {
+          width: 39px;
+          height: 34px;
+          border-radius: 10px;
+        }
+
+        .phase3-action::before {
+          font-size: 17px;
+        }
+
+        .phase3-offline {
+          bottom: 4px;
+          font-size: 6px;
+          white-space: nowrap;
+        }
+
+        .phase3-menu.pc-modes-open .phase3-modes {
+          top: 33%;
+          width: calc(100vw - 30px);
+          gap: 7px;
+        }
+
+        .phase3-menu.pc-modes-open .phase3-mode {
+          min-height: 70px;
+        }
+
+        .phase3-menu.pc-sections-open .phase3-columns {
+          top: 27%;
+          width: calc(100vw - 24px);
+          max-height: 56vh;
+          gap: 8px;
+          grid-template-columns: 1fr;
+        }
+
+        .phase3-menu.pc-sections-open .phase3-columns .phase3-panel {
+          padding: 11px;
+        }
+
+        .p3-floor {
+          height: 31%;
+          bottom: -9%;
+        }
+
+        .p3-horizon {
+          bottom: 21%;
+        }
+      }
+
+      @media (max-width: 430px) {
+        .phase3-logo {
+          top: 10.5%;
+          width: 78px;
+          height: 125px;
+        }
+
+        .phase3-pc-nav {
+          top: 32%;
+          width: calc(100vw - 24px);
+        }
+
+        .phase3-pc-nav button {
+          min-height: 44px;
+          grid-template-columns: 28px 1fr;
+          padding: 0 11px;
+          font-size: 10px;
+        }
+
+        .phase3-pc-nav button[data-pc-action="play"] {
+          min-height: 54px;
+        }
+
+        .phase3-profile {
+          width: 145px;
+          left: 10px;
+          bottom: 10px;
+        }
+
+        .phase3-leaderboard-panel {
+          width: 134px;
+          right: 10px;
+          bottom: 10px;
+        }
+
+        .phase3-actions {
+          top: 10px;
+          right: 10px;
+        }
+
+        .phase3-action {
+          width: 34px;
+          height: 30px;
+        }
+
+        .phase3-action::before {
+          font-size: 15px;
+        }
+
+        .p3-floor {
+          height: 28%;
+        }
+      }
+
+      @media (max-height: 620px) and (orientation: landscape) {
+        .phase3-logo {
+          top: 4%;
+          width: 72px;
+          height: 105px;
+        }
+
+        .phase3-pc-nav {
+          top: 25%;
+          width: min(520px, 54vw);
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .phase3-pc-nav button,
+        .phase3-pc-nav button[data-pc-action="play"] {
+          min-height: 43px;
+        }
+
+        .phase3-profile,
+        .phase3-leaderboard-panel {
+          bottom: 9px;
+        }
+
+        .phase3-columns {
+          max-height: 62vh;
+        }
+
+        .p3-floor {
+          height: 38%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #phase3-menu::before,
+        .p3-scene::before,
+        .p3-light-columns i,
+        .p3-floor,
+        .p3-horizon,
+        .p3-particles i,
+        .phase3-logo,
+        .phase3-pc-nav button[data-pc-action="play"] {
+          animation: none !important;
+        }
+      }
+
       @media(max-width:620px){.phase3-columns{grid-template-columns:1fr}}
       @media(max-width:420px){.phase3-menu-card{padding:15px}.phase3-title{font-size:29px}}
       @media(max-height:620px) and (orientation:landscape){.phase3-menu{align-items:flex-start}.phase3-menu-card{margin:6px 0}.phase3-brand{margin-bottom:9px}.phase3-logo{width:42px;height:42px}.phase3-title{font-size:25px}.phase3-columns{grid-template-columns:1fr 1fr}.phase3-panel{padding:10px}}
@@ -1046,19 +1721,52 @@
     menu.className = 'phase3-menu';
     menu.innerHTML = `
       <div class="phase3-menu-card glass-panel border-neon">
+        <div class="p3-scene" aria-hidden="true">
+          <div class="p3-light-columns">
+            <i style="--x:7%;--w:2px;--h:42%;--d:-1.8s"></i>
+            <i style="--x:14%;--w:4px;--h:58%;--d:-3.1s"></i>
+            <i style="--x:23%;--w:2px;--h:36%;--d:-.8s"></i>
+            <i style="--x:31%;--w:7px;--h:65%;--d:-2.4s"></i>
+            <i style="--x:40%;--w:2px;--h:48%;--d:-4s"></i>
+            <i style="--x:49%;--w:8px;--h:72%;--d:-1.2s"></i>
+            <i style="--x:59%;--w:3px;--h:54%;--d:-2.8s"></i>
+            <i style="--x:68%;--w:6px;--h:63%;--d:-3.6s"></i>
+            <i style="--x:77%;--w:2px;--h:43%;--d:-1.1s"></i>
+            <i style="--x:86%;--w:5px;--h:57%;--d:-2.1s"></i>
+            <i style="--x:94%;--w:2px;--h:39%;--d:-3.3s"></i>
+          </div>
+          <div class="p3-floor"></div>
+          <div class="p3-horizon"></div>
+          <div class="p3-particles">
+            <i style="--x:5%;--y:22%;--s:5px;--dur:5.7s;--delay:-2.2s"></i>
+            <i style="--x:12%;--y:64%;--s:8px;--dur:7.1s;--delay:-4.8s"></i>
+            <i style="--x:19%;--y:36%;--s:4px;--dur:4.9s;--delay:-1.1s"></i>
+            <i style="--x:27%;--y:76%;--s:7px;--dur:6.2s;--delay:-3.5s"></i>
+            <i style="--x:33%;--y:18%;--s:5px;--dur:5.3s;--delay:-.5s"></i>
+            <i style="--x:41%;--y:54%;--s:4px;--dur:7.8s;--delay:-5.4s"></i>
+            <i style="--x:47%;--y:28%;--s:8px;--dur:6.5s;--delay:-2.7s"></i>
+            <i style="--x:55%;--y:69%;--s:5px;--dur:5.8s;--delay:-4s"></i>
+            <i style="--x:62%;--y:43%;--s:4px;--dur:7.4s;--delay:-1.9s"></i>
+            <i style="--x:70%;--y:24%;--s:7px;--dur:5.1s;--delay:-3.1s"></i>
+            <i style="--x:76%;--y:61%;--s:5px;--dur:6.9s;--delay:-.9s"></i>
+            <i style="--x:83%;--y:34%;--s:4px;--dur:5.6s;--delay:-4.2s"></i>
+            <i style="--x:91%;--y:70%;--s:8px;--dur:7.5s;--delay:-2.5s"></i>
+            <i style="--x:96%;--y:17%;--s:5px;--dur:6.1s;--delay:-3.7s"></i>
+          </div>
+        </div>
         <div class="phase3-brand">
-          <img src="./icon.svg" alt="Logo oficial Blohsh Blast" class="phase3-logo">
+          <img src="./logo-official.svg" alt="Logo oficial Blohsh Blast" class="phase3-logo">
           <h1 class="phase3-title">BLOHSH<br>BLAST</h1>
           <p class="phase3-subtitle">PUZZLE ARCADE // PC EDITION</p>
         </div>
 
         <nav class="phase3-pc-nav" aria-label="Menu principal">
-          <button type="button" data-pc-action="play">PLAY</button>
-          <button type="button" data-pc-action="modes">MODOS DE JOGO</button>
-          <button type="button" data-pc-action="skins">SKINS</button>
-          <button type="button" data-pc-action="missions">MISSÕES</button>
-          <button type="button" data-pc-action="daily">DAILY CHALLENGE</button>
-          <button type="button" data-pc-action="stats">ESTATÍSTICAS</button>
+          <button type="button" data-pc-action="play"><span class="p3-nav-icon" aria-hidden="true">▶</span><span>PLAY</span></button>
+          <button type="button" data-pc-action="modes"><span class="p3-nav-icon" aria-hidden="true">▦</span><span>MODOS DE JOGO</span></button>
+          <button type="button" data-pc-action="skins"><span class="p3-nav-icon" aria-hidden="true">◆</span><span>SKINS</span></button>
+          <button type="button" data-pc-action="missions"><span class="p3-nav-icon" aria-hidden="true">▣</span><span>MISSÕES</span></button>
+          <button type="button" data-pc-action="daily"><span class="p3-nav-icon" aria-hidden="true">▦</span><span>DAILY CHALLENGE</span></button>
+          <button type="button" data-pc-action="stats"><span class="p3-nav-icon" aria-hidden="true">▥</span><span>ESTATÍSTICAS</span></button>
         </nav>
 
         <div class="phase3-profile">
@@ -1097,9 +1805,9 @@
         </div>
 
         <div class="phase3-actions">
-          <button id="phase3-stats-button" class="phase3-action" type="button">Estatísticas</button>
-          <button id="phase3-menu-sound" class="phase3-action" type="button">SFX ON</button>
-          <button id="phase3-close-menu" class="phase3-action" type="button">Fechar</button>
+          <button id="phase3-stats-button" class="phase3-action" type="button" aria-label="Estatísticas">Estatísticas</button>
+          <button id="phase3-menu-sound" class="phase3-action" type="button" aria-label="Som">SFX ON</button>
+          <button id="phase3-close-menu" class="phase3-action" type="button" aria-label="Fechar menu">Fechar</button>
         </div>
         <p id="phase3-offline" class="phase3-offline">Verificando modo offline...</p>
       </div>
@@ -1133,7 +1841,7 @@
 
   function patchExistingUI() {
     const logo = document.querySelector('header img.brand-logo');
-    if (logo) logo.src = './icon.svg';
+    if (logo) logo.src = './logo-official.svg';
 
     const head = document.head;
     if (!head.querySelector('link[rel="manifest"]')) {
