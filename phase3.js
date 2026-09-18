@@ -538,12 +538,16 @@
   }
 
   function showMenu() {
+    const menu = $('phase3-menu');
+    menu?.classList.remove('pc-modes-open', 'pc-sections-open');
     document.body.classList.add('phase3-menu-open');
+    updateDeviceProfile();
     renderMenu();
   }
 
   function hideMenu() {
     document.body.classList.remove('phase3-menu-open');
+    $('phase3-menu')?.classList.remove('pc-modes-open', 'pc-sections-open');
   }
 
   function openStats() {
