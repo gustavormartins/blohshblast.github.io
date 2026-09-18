@@ -2,7 +2,7 @@ name: Blohsh Blast E2E
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'test/stabilize-game-e2e']
   pull_request:
     branches: [main]
 
