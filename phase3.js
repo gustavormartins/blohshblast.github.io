@@ -710,7 +710,8 @@
     const style = document.createElement('style');
     style.textContent = `
       body.phase3-menu-open > *:not(#phase3-menu):not(#phase3-stats-modal){visibility:hidden!important;pointer-events:none!important}
-      #phase3-menu{visibility:visible!important;pointer-events:auto!important}
+      #phase3-menu{visibility:hidden!important;pointer-events:none!important;opacity:0}
+      body.phase3-menu-open #phase3-menu{visibility:visible!important;pointer-events:auto!important;opacity:1}
       #phase3-stats-modal{visibility:visible!important;pointer-events:auto!important}
       .phase3-menu{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.9);overflow:auto}
       .phase3-menu-card{width:min(100%,560px);max-height:calc(100dvh - 28px);overflow:auto;padding:22px;border-radius:28px}
@@ -725,6 +726,7 @@
       .phase3-progress{height:5px;margin-top:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
       .phase3-progress i{display:block;height:100%;background:var(--accent);box-shadow:0 0 10px var(--accent);transition:width 220ms ease}
       .phase3-section-title{margin:15px 0 8px;color:var(--text-muted);font-size:9px;letter-spacing:.2em;text-transform:uppercase}
+      .phase3-menu-card > .phase3-section-title{display:none}
       .phase3-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
       .phase3-mode{border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);background:rgba(0,0,0,.2);color:var(--text-main);border-radius:17px;padding:14px;text-align:left;font:inherit;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}
       .phase3-mode:hover,.phase3-mode:focus-visible{transform:translateY(-2px);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);outline:none}
