@@ -43,6 +43,7 @@
     daily: null,
     leaderboard: null,
     nickname: 'PLAYER',
+    device: 'pc',
     base: {}
   };
 
@@ -329,7 +330,48 @@
     renderMenu();
   }
 
+  function detectDevice() {
+    const ua = navigator.userAgent || '';
+    const uaMobile = navigator.userAgentData?.mobile === true ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches === true;
+    const narrowViewport = Math.min(window.innerWidth || 9999, window.innerHeight || 9999) <= 900;
+    return uaMobile || (coarsePointer && narrowViewport) ? 'mobile' : 'pc';
+  }
+
+  function updateDeviceState() {
+    P3.device = detectDevice();
+    document.documentElement.dataset.device = P3.device;
+    document.body.dataset.device = P3.device;
+
+    const node = $('phase3-device');
+    if (node) {
+      node.innerText = P3.device === 'mobile' ? 'MOBILE // TOUCH' : 'PC // DESKTOP';
+    }
+  }
+
+  function resetRuntimeState() {
+    isDragging = false;
+    dragPieceIndex = -1;
+    dragMatrix = null;
+    dragPointerId = null;
+    touchOffsetY = 0;
+    draggingContainer.style.display = 'none';
+    clearHints();
+
+    if (typeof screenEffect !== 'undefined' && screenEffect) {
+      screenEffect.className = '';
+    }
+
+    if (typeof effectLayer !== 'undefined' && effectLayer) {
+      effectLayer.innerHTML = '';
+    }
+
+    boardEl.classList.remove('impact-place', 'impact-clear');
+  }
+
   function startGame(mode = 'classic') {
+    resetRuntimeState();
     P3.mode = P3.MODES[mode] ? mode : 'classic';
     P3.MODE = { S: P3.MODES[P3.mode] };
     P3.rngState = P3.mode === 'daily' ? hashString(P3.daily.date + ':game') : null;
@@ -369,6 +411,7 @@
     updateSkin();
     updateBoardVisuals();
     generateRack();
+    checkGameOver();
     updateModeChip();
   }
 
@@ -529,6 +572,7 @@
     const sfx = $('sound-toggle');
     if (sfx && typeof soundEnabled !== 'undefined') sfx.innerText = soundEnabled ? 'SFX ON' : 'SFX OFF';
 
+    updateDeviceState();
     updateOfflineStatus();
   }
 
@@ -628,6 +672,8 @@
 
     window.addEventListener('online', () => updateOfflineStatus());
     window.addEventListener('offline', () => updateOfflineStatus());
+    window.addEventListener('resize', updateDeviceState);
+    window.addEventListener('orientationchange', updateDeviceState);
 
     const gameMenuButton = document.createElement('button');
     gameMenuButton.type = 'button';
@@ -1784,6 +1830,7 @@
           <button id="phase3-menu-sound" class="phase3-action" type="button" aria-label="Som">SFX ON</button>
           <button id="phase3-close-menu" class="phase3-action" type="button" aria-label="Fechar menu">Fechar</button>
         </div>
+        <p id="phase3-device" class="phase3-device">PC // DESKTOP</p>
         <p id="phase3-offline" class="phase3-offline">Verificando modo offline...</p>
       </div>
     `;
