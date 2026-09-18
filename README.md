@@ -26,7 +26,7 @@ Zero Dependências Locais: Funciona diretamente no browser. Usa apenas Tailwind 
 
 HTML5 (Estrutura do tabuleiro e UI)
 
-CSS3 & Tailwind CSS (Animações, brilhos neon e layout flexível)
+CSS3 (Layout responsivo, temas, efeitos e animações)
 
 Vanilla JavaScript (Lógica do jogo, sistema de arrastar/largar e deteção de colisões)
 
@@ -36,7 +36,7 @@ Como o jogo é composto por um único ficheiro, executá-lo é incrivelmente sim
 
 Faz o clone deste repositório:
 
-git clone [https://github.com/teu-utilizador/blohsh-blast.git](https://github.com/teu-utilizador/blohsh-blast.git)
+git clone https://github.com/gustavormartins/blohshblast.github.io.git
 
 
 Navega até à pasta do projeto:
@@ -50,7 +50,7 @@ Dá um duplo clique no ficheiro index.html para o abrires no teu navegador web f
 
 🤝 Como Contribuir
 
-O Blohsh Blast é open source e todas as contribuições são muito bem-vindas! Queres adicionar novos sons, novas peças ou melhorar as animações? Segue estes passos:
+O Blohsh Blast é open source e todas as contribuições são muito bem-vindas! Queres adicionar novos sons, novas peças, modos de jogo ou melhorar as animações? Segue estes passos:
 
 Faz um Fork do projeto.
 

@@ -4,11 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Blohsh Blast</title>
-  <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
-
     :root {
       --neon-green: #39ff14;
       --bg-main: #050505;
@@ -655,6 +652,186 @@
       }
     }
 
+    /* --- LOCAL LAYOUT / NO CDN RUNTIME DEPENDENCY --- */
+    .app-shell {
+      min-height: 100dvh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      user-select: none;
+    }
+
+    .game-header {
+      width: min(92vw, 400px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      position: relative;
+      z-index: 20;
+      flex: 0 0 auto;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.06em;
+      line-height: 1;
+    }
+
+    .brand-subtitle {
+      color: #fff;
+      font-size: 14px;
+      letter-spacing: 0.2em;
+    }
+
+    .skin-label {
+      display: block;
+      margin-top: 4px;
+      font-size: 10px;
+      line-height: 1.2;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+    }
+
+    .score-panel {
+      text-align: right;
+      border-radius: 16px;
+      padding: 8px 16px;
+    }
+
+    .score-caption {
+      margin: 0;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .score-value {
+      margin: 0;
+      color: #fff;
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .highscore-line {
+      margin: 4px 0 0;
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    .game-main {
+      flex: 1 1 auto;
+      width: 100%;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 20;
+      min-height: 0;
+    }
+
+    .game-over-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-hidden {
+      display: none !important;
+    }
+
+    .game-over-card {
+      width: min(100%, 380px);
+      padding: 32px;
+      border-radius: 24px;
+      text-align: center;
+    }
+
+    .game-over-title {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    .game-over-copy {
+      margin: 0 0 24px;
+    }
+
+    .final-score-panel {
+      margin-bottom: 24px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(0,0,0,0.35);
+    }
+
+    .final-score-caption {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .final-score-value {
+      margin: 4px 0 0;
+      color: #fff;
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .restart-button {
+      width: 100%;
+      border: 0;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    .restart-button:focus-visible,
+    .rack-slot:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+
     @media (max-width: 420px) {
       #rack {
         height: 108px;
@@ -675,63 +852,118 @@
         height: 34px;
       }
     }
+
+
+    @media (max-height: 620px) and (orientation: landscape) {
+      .game-header {
+        padding: 8px 12px;
+      }
+
+      .brand-logo {
+        height: 30px;
+      }
+
+      .brand-title {
+        font-size: 19px;
+      }
+
+      .brand-subtitle {
+        font-size: 10px;
+      }
+
+      .skin-label {
+        font-size: 8px;
+        letter-spacing: 0.14em;
+      }
+
+      .score-panel {
+        padding: 6px 10px;
+        border-radius: 12px;
+      }
+
+      .score-value {
+        font-size: 22px;
+      }
+
+      .game-main {
+        padding: 0 10px 6px;
+      }
+
+      #board {
+        width: min(68vh, 400px);
+      }
+
+      #rack {
+        height: 72px;
+        margin-top: 6px;
+      }
+
+      .rack-slot {
+        width: 64px;
+        height: 64px;
+      }
+
+      .piece-preview {
+        transform: scale(0.46);
+      }
+    }
   </style>
 </head>
 
-<body class="skin-blohsh flex flex-col items-center justify-center min-h-[100dvh] w-full select-none">
+<body class="app-shell skin-blohsh">
   <div id="screen-effect"></div>
   <div id="effect-layer"></div>
   <div id="combo-badge">COMBO</div>
 
-  <header class="w-full max-w-[400px] flex justify-between items-center p-4 relative z-20">
-    <div class="flex items-center gap-2">
+  <header class="game-header">
+    <div class="brand-lockup">
       <img
         src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Blohsh.png"
         alt="Blohsh Logo"
-        class="h-10 w-auto object-contain"
+        class="brand-logo"
         style="filter: drop-shadow(0 0 8px var(--accent));"
       />
 
       <div>
-        <h1 class="text-2xl font-bold tracking-tighter leading-none text-neon">
-          BLOHSH<br><span class="text-sm tracking-widest text-white">BLAST</span>
+        <h1 class="brand-title text-neon">
+          BLOHSH<br><span class="brand-subtitle">BLAST</span>
         </h1>
-        <p id="skin-label" class="text-[10px] uppercase tracking-[0.22em] text-muted mt-1">
+        <p id="skin-label" class="skin-label text-muted">
           Nível 1 — Blohsh Original
         </p>
       </div>
     </div>
 
-    <div class="text-right glass-panel rounded-2xl px-4 py-2">
-      <p class="text-xs uppercase text-muted">Score</p>
-      <p class="text-3xl font-bold text-white" id="score-display">0</p>
-      <p class="text-[10px] text-muted mt-1">High: <span id="highscore-display">0</span></p>
+    <div class="score-panel glass-panel">
+      <p class="score-caption text-muted">Score</p>
+      <p class="score-value" id="score-display">0</p>
+      <p class="highscore-line text-muted">High: <span id="highscore-display">0</span></p>
     </div>
   </header>
 
-  <main class="flex-1 w-full px-4 flex flex-col justify-center items-center relative z-20">
-    <div id="board" aria-label="Tabuleiro 8 por 8 do Blohsh Blast"></div>
+  <main class="game-main">
+    <div id="board" role="grid" aria-label="Tabuleiro 8 por 8 do Blohsh Blast"></div>
 
     <div id="rack" aria-label="Peças disponíveis">
-      <div class="rack-slot" data-index="0"></div>
-      <div class="rack-slot" data-index="1"></div>
-      <div class="rack-slot" data-index="2"></div>
+      <div class="rack-slot" data-index="0" role="button" tabindex="0" aria-label="Peça 1"></div>
+      <div class="rack-slot" data-index="1" role="button" tabindex="0" aria-label="Peça 2"></div>
+      <div class="rack-slot" data-index="2" role="button" tabindex="0" aria-label="Peça 3"></div>
     </div>
   </main>
 
   <div id="dragging-container"></div>
 
-  <div id="game-over-modal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center hidden px-4">
-    <div class="glass-panel border-neon p-8 rounded-3xl text-center max-w-sm w-full">
-      <h2 class="text-3xl font-bold text-neon mb-2">Tudo bem, você foi longe...</h2>
-      <p class="text-muted mb-6">Fim de Jogo. Sem espaço para novas peças.</p>
+  <div id="game-over-modal" class="game-over-modal modal-hidden">
+    <div class="game-over-card glass-panel border-neon">
+      <h2 class="game-over-title text-neon">Tudo bem, você foi longe...</h2>
+      <p class="game-over-copy text-muted">Fim de Jogo. Sem espaço para novas peças.</p>
 
-      <div class="mb-6 bg-black/35 p-4 rounded-2xl">
-        <p class="text-sm text-muted">Pontuação Final</p>
-        <p class="text-4xl font-bold text-white" id="final-score">0</p>
+      <div class="final-score-panel">
+        <p class="final-score-caption text-muted">Pontuação Final</p>
+        <p class="final-score-value" id="final-score">0</p>
       </div>
 
-      <button onclick="resetGame()" class="primary-button w-full font-bold py-3 px-6 rounded-2xl text-lg uppercase tracking-wider transition-colors duration-200">
+      <button onclick="resetGame()" class="primary-button restart-button">
         Tentar Novamente
       </button>
     </div>
@@ -803,6 +1035,7 @@
     let isDragging = false;
     let dragPieceIndex = -1;
     let dragMatrix = null;
+    let dragPointerId = null;
     let touchOffsetY = 0;
 
     // --- DOM ELEMENTS ---
@@ -889,8 +1122,8 @@
       rackSlots.forEach((slot, index) => {
         slot.innerHTML = '';
         slot.classList.remove('hidden-slot');
-        slot.onmousedown = null;
-        slot.ontouchstart = null;
+        slot.onpointerdown = null;
+        slot.onkeydown = null;
 
         const matrix = rackPieces[index];
         if (!matrix) return;
@@ -913,32 +1146,41 @@
         }
 
         slot.appendChild(preview);
-        slot.onmousedown = event => startDrag(event, index, matrix, slot, false);
-        slot.ontouchstart = event => startDrag(event.touches[0], index, matrix, slot, true);
+        slot.onpointerdown = event => startDrag(event, index, matrix, slot);
+        slot.onkeydown = event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            startKeyboardPlacement(index, matrix, slot);
+          }
+        };
       });
     }
 
     // --- DRAG AND DROP LOGIC ---
     function setupEventListeners() {
-      document.addEventListener('mousemove', drag);
-
-      document.addEventListener('touchmove', event => {
-        if (isDragging) event.preventDefault();
-        drag(event.touches[0]);
-      }, { passive: false });
-
-      document.addEventListener('mouseup', endDrag);
-      document.addEventListener('touchend', endDrag);
+      document.addEventListener('pointermove', drag, { passive: false });
+      document.addEventListener('pointerup', endDrag);
+      document.addEventListener('pointercancel', endDrag);
     }
 
-    function startDrag(point, index, matrix, slotEl, isTouch) {
-      if (!matrix) return;
+    function startDrag(event, index, matrix, slotEl) {
+      if (!matrix || isDragging) return;
 
+      event.preventDefault();
       isDragging = true;
       dragPieceIndex = index;
       dragMatrix = matrix;
-      touchOffsetY = isTouch ? 62 : 0;
+      dragPointerId = event.pointerId;
+      touchOffsetY = event.pointerType === 'touch' ? 58 : 0;
       slotEl.classList.add('hidden-slot');
+
+      if (slotEl.setPointerCapture) {
+        try {
+          slotEl.setPointerCapture(event.pointerId);
+        } catch (_) {
+          // Pointer capture is best-effort; document listeners remain active.
+        }
+      }
 
       draggingContainer.innerHTML = '';
       draggingContainer.style.display = 'grid';
@@ -957,14 +1199,19 @@
         }
       }
 
-      updateDragPosition(point.clientX, point.clientY);
+      updateDragPosition(event.clientX, event.clientY);
+      drag(event);
     }
 
-    function drag(point) {
-      if (!isDragging || !point) return;
+    function drag(event) {
+      if (!isDragging || !event || event.pointerId !== dragPointerId) return;
 
-      updateDragPosition(point.clientX, point.clientY);
-      const gridPos = getGridPosition(point.clientX, point.clientY);
+      if (event.pointerType === 'touch') {
+        event.preventDefault();
+      }
+
+      updateDragPosition(event.clientX, event.clientY);
+      const gridPos = getGridPosition(event.clientX, event.clientY);
 
       clearHints();
 
@@ -975,25 +1222,26 @@
     }
 
     function updateDragPosition(x, y) {
-      const width = dragMatrix[0].length * 42;
-      const height = dragMatrix.length * 42;
+      const rect = draggingContainer.getBoundingClientRect();
+      const width = rect.width || dragMatrix[0].length * 40;
+      const height = rect.height || dragMatrix.length * 40;
+      const adjustedY = y - touchOffsetY;
 
       draggingContainer.style.left = `${x - width / 2}px`;
-      draggingContainer.style.top = `${y - height / 2 - touchOffsetY}px`;
+      draggingContainer.style.top = `${adjustedY - height / 2}px`;
     }
 
     function getGridPosition(clientX, clientY) {
-      const rect = boardEl.getBoundingClientRect();
-      const x = clientX;
-      const y = clientY - touchOffsetY;
+      const adjustedY = clientY - touchOffsetY;
+      const element = document.elementFromPoint(clientX, adjustedY);
+      const cell = element && element.closest ? element.closest('.cell') : null;
 
-      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      if (!cell || !boardEl.contains(cell)) {
         return null;
       }
 
-      const cellSize = rect.width / BOARD_SIZE;
-      const hoverCellX = Math.floor((x - rect.left) / cellSize);
-      const hoverCellY = Math.floor((y - rect.top) / cellSize);
+      const hoverCellX = Number(cell.dataset.x);
+      const hoverCellY = Number(cell.dataset.y);
       const anchorX = Math.floor(hoverCellX - (dragMatrix[0].length / 2) + 0.5);
       const anchorY = Math.floor(hoverCellY - (dragMatrix.length / 2) + 0.5);
 
@@ -1001,28 +1249,59 @@
     }
 
     function endDrag(event) {
-      if (!isDragging) return;
+      if (!isDragging || !event || event.pointerId !== dragPointerId) return;
+
+      const gridPos = getGridPosition(event.clientX, event.clientY);
+      const pieceIndex = dragPieceIndex;
+      const pieceMatrix = dragMatrix;
+      const slot = rackSlots[pieceIndex];
 
       isDragging = false;
+      dragPointerId = null;
       draggingContainer.style.display = 'none';
       clearHints();
 
-      const point = event.changedTouches ? event.changedTouches[0] : event;
-      const gridPos = getGridPosition(point.clientX, point.clientY);
-
-      if (gridPos && checkFit(dragMatrix, gridPos.x, gridPos.y)) {
-        placePiece(dragMatrix, gridPos.x, gridPos.y);
-        rackPieces[dragPieceIndex] = null;
-        rackSlots[dragPieceIndex].innerHTML = '';
+      if (gridPos && checkFit(pieceMatrix, gridPos.x, gridPos.y)) {
+        placePiece(pieceMatrix, gridPos.x, gridPos.y);
+        rackPieces[pieceIndex] = null;
+        slot.innerHTML = '';
         checkLines();
         generateRack();
         checkGameOver();
       } else {
-        rackSlots[dragPieceIndex].classList.remove('hidden-slot');
+        slot.classList.remove('hidden-slot');
       }
 
       dragPieceIndex = -1;
       dragMatrix = null;
+      touchOffsetY = 0;
+    }
+
+    function startKeyboardPlacement(index, matrix, slotEl) {
+      if (!matrix || isDragging) return;
+
+      const position = findFirstValidPlacement(matrix);
+      if (!position) {
+        slotEl.classList.add('hidden-slot');
+        setTimeout(() => slotEl.classList.remove('hidden-slot'), 180);
+        return;
+      }
+
+      placePiece(matrix, position.x, position.y);
+      rackPieces[index] = null;
+      slotEl.innerHTML = '';
+      checkLines();
+      generateRack();
+      checkGameOver();
+    }
+
+    function findFirstValidPlacement(matrix) {
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        for (let x = 0; x < BOARD_SIZE; x++) {
+          if (checkFit(matrix, x, y)) return { x, y };
+        }
+      }
+      return null;
     }
 
     // --- GAME RULES ---
@@ -1063,10 +1342,13 @@
       addScore(blocksPlaced * 10);
     }
 
+    let hintCells = [];
+
     function clearHints() {
-      Array.from(boardEl.children).forEach(cell => {
+      hintCells.forEach(cell => {
         cell.classList.remove('cell-hint', 'cell-hint-error');
       });
+      hintCells = [];
     }
 
     function drawHint(matrix, anchorX, anchorY, isValid) {
@@ -1088,6 +1370,8 @@
           } else {
             cell.classList.add('cell-hint-error');
           }
+
+          hintCells.push(cell);
         }
       }
     }
@@ -1298,11 +1582,18 @@
 
       if (!canPlay) {
         document.getElementById('final-score').innerText = score;
-        gameOverModal.classList.remove('hidden');
+        gameOverModal.classList.remove('modal-hidden');
       }
     }
 
     function resetGame() {
+      isDragging = false;
+      dragPieceIndex = -1;
+      dragMatrix = null;
+      dragPointerId = null;
+      touchOffsetY = 0;
+      draggingContainer.style.display = 'none';
+      clearHints();
       board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
       score = 0;
       scoreDisplay.innerText = '0';
@@ -1310,7 +1601,7 @@
 
       document.body.classList.remove(...COMBO_CLASSES);
       comboBadge.classList.remove('show');
-      gameOverModal.classList.add('hidden');
+      gameOverModal.classList.add('modal-hidden');
 
       updateSkin();
       updateBoardVisuals();
