@@ -209,7 +209,7 @@
       showMiniToast(`LEVEL UP // NÍVEL ${P3.progression.level}`);
     }
 
-    renderMenu();
+    if (document.body.classList.contains('phase3-menu-open')) renderMenu();
   }
 
   function loadMissions() {
@@ -257,7 +257,7 @@
     });
 
     writeJSON(P3.MISSIONS_KEY, P3.missions);
-    renderMissions();
+    if (document.body.classList.contains('phase3-menu-open')) renderMissions();
   }
 
   function loadDaily() {
@@ -279,7 +279,7 @@
     P3.leaderboard.sort((a, b) => b.score - a.score);
     P3.leaderboard = P3.leaderboard.slice(0, 50);
     writeJSON(P3.LEADERBOARD_KEY, P3.leaderboard);
-    renderLeaderboard();
+    if (document.body.classList.contains('phase3-menu-open')) renderLeaderboard();
   }
 
   function recordScore(finalScore) {
@@ -335,9 +335,21 @@
     P3.rngState = P3.mode === 'daily' ? hashString(P3.daily.date + ':game') : null;
     P3.gameEnded = false;
 
+    // Hard reset every transient gameplay state before a new run.
+    isDragging = false;
+    dragPieceIndex = -1;
+    dragMatrix = null;
+    dragPointerId = null;
+    touchOffsetY = 0;
+    draggingContainer.style.display = 'none';
+    clearHints();
+
     board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
     score = 0;
-    if (typeof scoreAnimationId !== 'undefined' && scoreAnimationId) cancelAnimationFrame(scoreAnimationId);
+    if (typeof scoreAnimationId !== 'undefined' && scoreAnimationId) {
+      cancelAnimationFrame(scoreAnimationId);
+      scoreAnimationId = null;
+    }
     if (typeof setDisplayedScore === 'function') setDisplayedScore(0);
     else if ($('score-display')) $('score-display').innerText = '0';
     rackPieces = [null, null, null];
@@ -356,7 +368,7 @@
     hideMenu();
     updateSkin();
     updateBoardVisuals();
-    generateRack();
+    window.generateRack();
     updateModeChip();
   }
 
@@ -367,62 +379,6 @@
   function getCurrentShape() {
     const pool = shapePool();
     return pool[Math.floor(random01() * pool.length)];
-  }
-
-  function generateRack() {
-    if (!rackPieces.every(piece => piece === null)) return;
-
-    const useSmart = P3.MODE.S.smartRng;
-    rackPieces = useSmart
-      ? smartRackLocal()
-      : [getCurrentShape(), getCurrentShape(), getCurrentShape()];
-
-    renderRack();
-    checkGameOver();
-  }
-
-  function addScore(points, popupText = null, popupClass = '') {
-    if (!Number.isFinite(points) || points <= 0) return;
-
-    const awarded = Math.round(points * P3.MODE.S.scoreMultiplier);
-    P3.base.addScore(awarded, popupText, popupClass);
-
-    missionEvent('score', awarded);
-    addXP(Math.max(1, Math.round((awarded / 12) * P3.MODE.S.xpMultiplier)));
-  }
-
-  function placePiece(matrix, anchorX, anchorY) {
-    P3.base.placePiece(matrix, anchorX, anchorY);
-    missionEvent('pieces', 1);
-  }
-
-  function checkLines() {
-    const before = combo;
-    const result = P3.base.checkLines();
-
-    if (result > 0) {
-      missionEvent('lines', result);
-      missionEvent('combo', combo);
-      if (board.every(row => row.every(cell => cell === 0))) {
-        missionEvent('perfect', 1);
-      }
-    } else if (before > 0) {
-      // The base game already resets the combo from its caller; mission progress stays as a maximum.
-    }
-
-    return result;
-  }
-
-  function checkGameOver() {
-    P3.base.checkGameOver();
-
-    const modal = $('game-over-modal');
-    const visible = modal && !modal.classList.contains('modal-hidden');
-
-    if (visible && !P3.gameEnded) {
-      P3.gameEnded = true;
-      recordScore(score);
-    }
   }
 
   function registerServiceWorker() {
@@ -452,6 +408,19 @@
     toast.innerText = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 1900);
+  }
+
+  function updateDeviceProfile() {
+    const mobile = window.matchMedia('(max-width: 900px)').matches;
+    const device = mobile ? 'mobile' : 'pc';
+    document.body.classList.toggle('device-mobile', mobile);
+    document.body.classList.toggle('device-pc', !mobile);
+    const menu = $('phase3-menu');
+    if (menu) menu.dataset.device = device;
+    const subtitle = document.querySelector('.phase3-subtitle');
+    if (subtitle) subtitle.innerText = mobile
+      ? 'PUZZLE ARCADE // MOBILE EDITION'
+      : 'PUZZLE ARCADE // PC EDITION';
   }
 
   function renderProgress() {
@@ -685,7 +654,8 @@
     const style = document.createElement('style');
     style.textContent = `
       body.phase3-menu-open > *:not(#phase3-menu):not(#phase3-stats-modal){visibility:hidden!important;pointer-events:none!important}
-      #phase3-menu{visibility:visible!important;pointer-events:auto!important}
+      #phase3-menu{visibility:hidden!important;pointer-events:none!important;opacity:0}
+      body.phase3-menu-open #phase3-menu{visibility:visible!important;pointer-events:auto!important;opacity:1}
       #phase3-stats-modal{visibility:visible!important;pointer-events:auto!important}
       .phase3-menu{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.9);overflow:auto}
       .phase3-menu-card{width:min(100%,560px);max-height:calc(100dvh - 28px);overflow:auto;padding:22px;border-radius:28px}
@@ -700,6 +670,7 @@
       .phase3-progress{height:5px;margin-top:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
       .phase3-progress i{display:block;height:100%;background:var(--accent);box-shadow:0 0 10px var(--accent);transition:width 220ms ease}
       .phase3-section-title{margin:15px 0 8px;color:var(--text-muted);font-size:9px;letter-spacing:.2em;text-transform:uppercase}
+      .phase3-menu-card > .phase3-section-title{display:none}
       .phase3-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
       .phase3-mode{border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);background:rgba(0,0,0,.2);color:var(--text-main);border-radius:17px;padding:14px;text-align:left;font:inherit;cursor:pointer;transition:transform 160ms ease,border-color 160ms ease,background 160ms ease}
       .phase3-mode:hover,.phase3-mode:focus-visible{transform:translateY(-2px);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);outline:none}
@@ -1864,27 +1835,23 @@
   }
 
   function patchEngine() {
-    P3.base.generateRack = generateRack;
-    P3.base.getRandomShape = getRandomShape;
-    P3.base.addScore = addScore;
-    P3.base.placePiece = placePiece;
-    P3.base.checkLines = checkLines;
-    P3.base.checkGameOver = checkGameOver;
-    P3.base.resetGame = resetGame;
+    // Capture the real legacy engine functions from the classic script.
+    P3.base.generateRack = window.generateRack;
+    P3.base.getRandomShape = window.getRandomShape;
+    P3.base.addScore = window.addScore;
+    P3.base.placePiece = window.placePiece;
+    P3.base.checkLines = window.checkLines;
+    P3.base.checkGameOver = window.checkGameOver;
+    P3.base.resetGame = window.resetGame;
 
-    // Base game functions call this symbol during combo/Perfect Clear.
-    if (typeof missionEvent === 'function') {
-      missionEvent = function(type, amount = 1) {
-        if (type === 'score') return;
-        if (type === 'pieces') return;
-        if (type === 'lines') return;
-        if (type === 'combo') return P3.missionProxy(type, amount);
-        if (type === 'perfect') return P3.missionProxy(type, amount);
+    if (typeof window.missionEvent === 'function') {
+      window.missionEvent = function(type, amount = 1) {
+        if (type === 'score' || type === 'pieces' || type === 'lines') return;
         return P3.missionProxy(type, amount);
       };
     }
 
-    generateRack = function() {
+    window.generateRack = function() {
       if (!rackPieces.every(piece => piece === null)) return;
 
       const useSmart = P3.MODE.S.smartRng;
@@ -1893,12 +1860,12 @@
         : [getRandomShapeLocal(), getRandomShapeLocal(), getRandomShapeLocal()];
 
       renderRack();
-      checkGameOver();
+      window.checkGameOver();
     };
 
-    getRandomShape = getRandomShapeLocal;
+    window.getRandomShape = getRandomShapeLocal;
 
-    addScore = function(points, popupText = null, popupClass = '') {
+    window.addScore = function(points, popupText = null, popupClass = '') {
       if (!Number.isFinite(points) || points <= 0) return;
       const awarded = Math.round(points * P3.MODE.S.scoreMultiplier);
       P3.base.addScore(awarded, popupText, popupClass);
@@ -1906,13 +1873,14 @@
       addXP(Math.max(1, Math.round((awarded / 12) * P3.MODE.S.xpMultiplier)));
     };
 
-    placePiece = function(matrix, anchorX, anchorY) {
+    window.placePiece = function(matrix, anchorX, anchorY) {
       P3.base.placePiece(matrix, anchorX, anchorY);
       P3.missionProxy('pieces', 1);
     };
 
-    checkLines = function() {
+    window.checkLines = function() {
       const result = P3.base.checkLines();
+
       if (result > 0) {
         P3.missionProxy('lines', result);
         P3.missionProxy('combo', combo);
@@ -1920,11 +1888,13 @@
           P3.missionProxy('perfect', 1);
         }
       }
+
       return result;
     };
 
-    checkGameOver = function() {
+    window.checkGameOver = function() {
       P3.base.checkGameOver();
+
       const modal = $('game-over-modal');
       const visible = modal && !modal.classList.contains('modal-hidden');
 
@@ -1934,11 +1904,11 @@
       }
     };
 
-    resetGame = function() {
+    window.resetGame = function() {
       startGame(P3.mode);
     };
 
-    updateSkin = applyPhase3Skin;
+    window.updateSkin = applyPhase3Skin;
   }
 
   P3.missionProxy = function(type, amount) {
@@ -1994,6 +1964,8 @@
     patchExistingUI();
     patchEngine();
     setupMenuEvents();
+    updateDeviceProfile();
+    window.addEventListener('resize', updateDeviceProfile);
 
     document.body.classList.add('phase3-menu-open');
     applyPhase3Skin();
