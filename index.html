@@ -821,6 +821,36 @@
       outline-offset: 3px;
     }
 
+    /* --- PHASE 2 GAME FEEDBACK --- */
+    .score-tools{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+    .header-tool{border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--text-muted);border-radius:999px;min-width:28px;height:24px;padding:0 8px;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:background 160ms ease,color 160ms ease,transform 160ms ease}
+    .header-tool:hover,.header-tool:focus-visible{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);transform:translateY(-1px)}
+    .score-popup{position:fixed;z-index:115;pointer-events:none;color:var(--accent);font-size:16px;font-weight:700;letter-spacing:.08em;text-shadow:0 0 8px var(--accent);transform:translate(-50%,0) scale(.86);opacity:0;animation:scorePopup 620ms cubic-bezier(.19,1,.22,1) forwards}
+    .score-popup.combo{font-size:18px}
+    @keyframes scorePopup{0%{opacity:0;transform:translate(-50%,8px) scale(.82)}18%{opacity:1;transform:translate(-50%,0) scale(1.08)}100%{opacity:0;transform:translate(-50%,-46px) scale(1)}}
+    #board.impact-place{animation:boardImpact 220ms ease-out}
+    #board.impact-clear{animation:boardClearImpact 320ms cubic-bezier(.19,1,.22,1)}
+    @keyframes boardImpact{0%{transform:scale(1)}40%{transform:scale(.992)}100%{transform:scale(1)}}
+    @keyframes boardClearImpact{0%{transform:translate(0) scale(1)}25%{transform:translate(2px,-1px) scale(1.006)}45%{transform:translate(-3px,2px) scale(.997)}70%{transform:translate(2px,1px) scale(1.003)}100%{transform:translate(0) scale(1)}}
+    .cell.place-impact{animation:cellPlaceImpact 240ms cubic-bezier(.19,1,.22,1)}
+    @keyframes cellPlaceImpact{0%{transform:scale(.78);filter:brightness(1.7)}55%{transform:scale(1.05);filter:brightness(1.15)}100%{transform:scale(1);filter:brightness(1)}}
+    .impact-particle{position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:112;background:var(--accent);box-shadow:0 0 8px var(--accent);opacity:0;animation:impactParticle 430ms ease-out forwards}
+    @keyframes impactParticle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.2)}}
+    #perfect-clear{position:fixed;left:50%;top:40%;z-index:120;pointer-events:none;text-align:center;color:var(--accent);text-shadow:0 0 8px var(--accent),0 0 30px color-mix(in srgb,var(--accent) 62%,transparent);opacity:0;transform:translate(-50%,14px) scale(.7)}
+    #perfect-clear.show{animation:perfectClearIn 1200ms cubic-bezier(.19,1,.22,1) forwards}
+    #perfect-clear strong{display:block;font-size:clamp(28px,8vw,48px);letter-spacing:.12em}
+    #perfect-clear span{display:block;margin-top:6px;font-size:clamp(10px,2.4vw,14px);letter-spacing:.24em;color:var(--text-main)}
+    @keyframes perfectClearIn{0%{opacity:0;transform:translate(-50%,14px) scale(.7)}18%{opacity:1;transform:translate(-50%,0) scale(1.05)}72%{opacity:1;transform:translate(-50%,-4px) scale(1)}100%{opacity:0;transform:translate(-50%,-32px) scale(1.02)}}
+    .stats-modal{position:fixed;inset:0;z-index:65;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.9)}
+    .stats-card{width:min(100%,400px);padding:24px;border-radius:24px}
+    .stats-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .stats-title{margin:0;font-size:24px;font-weight:700}
+    .stats-close{border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:transparent;color:var(--text-main);width:34px;height:34px;border-radius:50%;cursor:pointer;font:inherit}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .stats-item{padding:14px;border-radius:16px;background:rgba(0,0,0,.24);border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}
+    .stats-item span{display:block;color:var(--text-muted);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+    .stats-item strong{display:block;margin-top:5px;color:var(--text-main);font-size:22px}
+    .stats-foot{margin:16px 0 0;color:var(--text-muted);font-size:10px;line-height:1.5;text-align:center}
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -936,8 +966,12 @@
 
     <div class="score-panel glass-panel">
       <p class="score-caption text-muted">Score</p>
-      <p class="score-value" id="score-display">0</p>
+      <p class="score-value" id="score-display" aria-live="polite">0</p>
       <p class="highscore-line text-muted">High: <span id="highscore-display">0</span></p>
+      <div class="score-tools" aria-label="Controles do jogo">
+        <button id="sound-toggle" class="header-tool" type="button" aria-label="Ativar ou desativar sons">SFX ON</button>
+        <button id="stats-open" class="header-tool" type="button" aria-label="Abrir estatísticas">Stats</button>
+      </div>
     </div>
   </header>
 
@@ -952,6 +986,28 @@
   </main>
 
   <div id="dragging-container"></div>
+  <div id="perfect-clear" aria-live="assertive">
+    <strong>PERFECT CLEAR</strong>
+    <span>+1.000 BONUS</span>
+  </div>
+
+  <div id="stats-modal" class="stats-modal modal-hidden" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+    <div class="stats-card glass-panel border-neon">
+      <div class="stats-header">
+        <h2 id="stats-title" class="stats-title text-neon">Estatísticas</h2>
+        <button id="stats-close" class="stats-close" type="button" aria-label="Fechar estatísticas">×</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stats-item"><span>Partidas</span><strong id="stat-games">0</strong></div>
+        <div class="stats-item"><span>Pontuação máxima</span><strong id="stat-best">0</strong></div>
+        <div class="stats-item"><span>Peças colocadas</span><strong id="stat-pieces">0</strong></div>
+        <div class="stats-item"><span>Linhas limpas</span><strong id="stat-lines">0</strong></div>
+        <div class="stats-item"><span>Perfect Clears</span><strong id="stat-perfect">0</strong></div>
+        <div class="stats-item"><span>Maior combo</span><strong id="stat-combo">0x</strong></div>
+      </div>
+      <p class="stats-foot">As estatísticas são salvas localmente neste navegador.</p>
+    </div>
+  </div>
 
   <div id="game-over-modal" class="game-over-modal modal-hidden">
     <div class="game-over-card glass-panel border-neon">
@@ -1024,12 +1080,23 @@
     const COMBO_CLASSES = ['combo-arcade', 'combo-root', 'combo-space', 'combo-voxel'];
 
     // --- GAME STATE ---
+    const STATS_KEY = 'blohshBlastStats';
+    const SOUND_KEY = 'blohshBlastSound';
+    const PERFECT_CLEAR_BONUS = 1000;
+
     let board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
     let score = 0;
+    let displayedScore = 0;
+    let scoreAnimationId = null;
     let highScore = Number(localStorage.getItem('blohshHighScore')) || 0;
     let rackPieces = [null, null, null];
     let currentSkin = '';
+    let combo = 0;
     let comboTimeout = null;
+    let perfectClearTimeout = null;
+    let audioContext = null;
+    let soundEnabled = localStorage.getItem(SOUND_KEY) !== '0';
+    let stats = loadStats();
 
     // Drag state
     let isDragging = false;
@@ -1049,6 +1116,11 @@
     const comboBadge = document.getElementById('combo-badge');
     const screenEffect = document.getElementById('screen-effect');
     const effectLayer = document.getElementById('effect-layer');
+    const perfectClearEl = document.getElementById('perfect-clear');
+    const soundToggle = document.getElementById('sound-toggle');
+    const statsModal = document.getElementById('stats-modal');
+    const statsOpen = document.getElementById('stats-open');
+    const statsClose = document.getElementById('stats-close');
 
     // --- INITIALIZATION ---
     function init() {
