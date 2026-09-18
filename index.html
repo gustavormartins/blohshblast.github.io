@@ -34,6 +34,8 @@
     }
 
     body {
+      margin: 0;
+      min-width: 0;
       font-family: var(--font-main);
       background: var(--bg-main);
       color: var(--text-main);
@@ -1028,6 +1030,8 @@
   </div>
 
   <script>
+    window.BLOHSH_BLAST_PRODUCT_MODE = true;
+
     // --- GAME CONSTANTS & BALANCED SHAPES ---
     const BOARD_SIZE = 8;
 
@@ -1132,7 +1136,7 @@
       updateSkin();
       updateSoundToggle();
       renderStats();
-      registerGameStart();
+      if (!window.BLOHSH_BLAST_PRODUCT_MODE) registerGameStart();
       generateRack();
       setupEventListeners();
       setupUiControls();
@@ -1187,6 +1191,12 @@
 
     // --- SKIN PROGRESSION ---
     function updateSkin() {
+      const bridge = window.BlohshBlastBridge;
+      if (bridge && typeof bridge.applySkin === 'function') {
+        bridge.applySkin();
+        return;
+      }
+
       const nextSkin = SKINS.reduce((active, skin) => score >= skin.min ? skin : active, SKINS[0]);
 
       if (currentSkin !== nextSkin.className) {
@@ -1265,7 +1275,11 @@
       const allEmpty = rackPieces.every(piece => piece === null);
       if (!allEmpty) return;
 
-      rackPieces = buildSmartRack();
+      const bridge = window.BlohshBlastBridge;
+      rackPieces = bridge && typeof bridge.getRack === 'function'
+        ? bridge.getRack()
+        : buildSmartRack();
+
       renderRack();
       checkGameOver();
     }
@@ -1515,16 +1529,34 @@
     }
 
     function getGridPosition(clientX, clientY) {
-      const adjustedY = clientY - touchOffsetY;
-      const element = document.elementFromPoint(clientX, adjustedY);
-      const cell = element && element.closest ? element.closest('.cell') : null;
+      if (!dragMatrix) return null;
 
-      if (!cell || !boardEl.contains(cell)) {
+      const adjustedY = clientY - touchOffsetY;
+      const rect = boardEl.getBoundingClientRect();
+      const styles = getComputedStyle(boardEl);
+      const borderX = parseFloat(styles.borderLeftWidth) || 0;
+      const borderY = parseFloat(styles.borderTopWidth) || 0;
+      const paddingX = parseFloat(styles.paddingLeft) || 0;
+      const paddingY = parseFloat(styles.paddingTop) || 0;
+      const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+
+      const contentWidth = boardEl.clientWidth - paddingX - (parseFloat(styles.paddingRight) || 0);
+      const contentHeight = boardEl.clientHeight - paddingY - (parseFloat(styles.paddingBottom) || 0);
+      const cellWidth = (contentWidth - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+      const cellHeight = (contentHeight - gap * (BOARD_SIZE - 1)) / BOARD_SIZE;
+
+      const localX = clientX - rect.left - borderX - paddingX;
+      const localY = adjustedY - rect.top - borderY - paddingY;
+
+      if (cellWidth <= 0 || cellHeight <= 0 || localX < 0 || localY < 0 ||
+          localX > contentWidth || localY > contentHeight) {
         return null;
       }
 
-      const hoverCellX = Number(cell.dataset.x);
-      const hoverCellY = Number(cell.dataset.y);
+      const hoverCellX = Math.min(BOARD_SIZE - 1, Math.floor(localX / (cellWidth + gap)));
+      const hoverCellY = Math.min(BOARD_SIZE - 1, Math.floor(localY / (cellHeight + gap)));
+
+      // Keep the original drag feel: the cursor identifies the middle area of the piece.
       const anchorX = Math.floor(hoverCellX - (dragMatrix[0].length / 2) + 0.5);
       const anchorY = Math.floor(hoverCellY - (dragMatrix.length / 2) + 0.5);
 
@@ -1778,6 +1810,10 @@
       updateBoardVisuals();
       animatePlacementImpact(placedCells);
       addScore(blocksPlaced * 10);
+      const bridge = window.BlohshBlastBridge;
+      if (bridge && typeof bridge.onPiecePlaced === 'function') {
+        bridge.onPiecePlaced(1);
+      }
       playSound('place');
       triggerVibration(8);
       showScorePopup(blocksPlaced * 10);
@@ -1885,6 +1921,10 @@
       const baseClearScore = (totalLines * 100) * totalLines;
       const comboMultiplier = Math.min(1 + (combo - 1) * 0.35, 3);
       const clearScore = Math.round(baseClearScore * comboMultiplier);
+      const bridge = window.BlohshBlastBridge;
+      if (bridge && typeof bridge.onLinesCleared === 'function') {
+        bridge.onLinesCleared(totalLines);
+      }
 
       addScore(
         clearScore,
@@ -1896,6 +1936,9 @@
 
       if (isPerfectClear) {
         addScore(PERFECT_CLEAR_BONUS);
+        if (bridge && typeof bridge.onPerfectClear === 'function') {
+          bridge.onPerfectClear();
+        }
         showPerfectClear();
       }
 
@@ -1928,7 +1971,13 @@
     function addScore(points, popupText = null, popupClass = '') {
       if (!Number.isFinite(points) || points <= 0) return;
 
-      score += Math.round(points);
+      const bridge = window.BlohshBlastBridge;
+      const multiplier = bridge && typeof bridge.scoreMultiplier === 'function'
+        ? Math.max(0, Number(bridge.scoreMultiplier()) || 1)
+        : 1;
+      const awardedPoints = Math.round(points * multiplier);
+
+      score += awardedPoints;
       animateScoreTo(score);
 
       if (score > highScore) {
@@ -2041,6 +2090,10 @@
         playSound('gameover');
         triggerVibration([30, 55, 30]);
         gameOverModal.classList.remove('modal-hidden');
+        const bridge = window.BlohshBlastBridge;
+        if (bridge && typeof bridge.onGameOver === 'function') {
+          bridge.onGameOver(score);
+        }
       }
     }
 

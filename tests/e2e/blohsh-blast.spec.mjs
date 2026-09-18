@@ -76,7 +76,7 @@ test.describe('Blohsh Blast — core gameplay', () => {
     await page.mouse.move(boardBox.x + boardBox.width / 2, boardBox.y + boardBox.height / 2, { steps: 12 });
     await page.mouse.up();
     await expect(slot).toBeEmpty();
-    await expect(page.locator('#score-display')).not.toHaveText('0');
+    await expect.poll(() => page.evaluate(() => score)).toBeGreaterThan(0);
 
     // Deterministic clear + Perfect Clear.
     await configurePerfectClear(page);
@@ -135,6 +135,7 @@ test.describe('Blohsh Blast — core gameplay', () => {
       window.location.reload();
     });
     await page.locator('#phase3-menu').waitFor({ state: 'visible' });
+    await page.locator('[data-pc-action="skins"]').click();
     await page.locator('.p3-skin[data-skin="skin-tty"]').click();
     await expect(page.locator('body')).toHaveClass(/skin-tty/);
 
