@@ -1756,7 +1756,7 @@
           </div>
         </div>
         <div class="phase3-brand">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/b/bb/Blohsh.png" alt="Logo oficial Blohsh Blast" class="phase3-logo">
+          <img src="./logo-official.png" alt="Logo oficial Blohsh Blast" class="phase3-logo">
           <h1 class="phase3-title">BLOHSH<br>BLAST</h1>
           <p class="phase3-subtitle">PUZZLE ARCADE // PC EDITION</p>
         </div>
@@ -1843,7 +1843,7 @@
 
   function patchExistingUI() {
     const logo = document.querySelector('header img.brand-logo');
-    if (logo) logo.src = 'https://upload.wikimedia.org/wikipedia/commons/b/bb/Blohsh.png';
+    if (logo) logo.src = './logo-official.png';
 
     const head = document.head;
     if (!head.querySelector('link[rel="manifest"]')) {
