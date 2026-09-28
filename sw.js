@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blohsh-blast-v5';
+const CACHE_NAME = 'blohsh-blast-v6';
 const APP_SHELL = [
   './',
   './index.html',
