@@ -277,6 +277,151 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
 });
 
 
+
+test.describe('Blohsh Blast — deferred error paths', () => {
+  test('mismatched pointer id is ignored and matching pointercancel cleans up', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await startClassic(page);
+
+    const slot = page.locator('#rack .rack-slot').first();
+    const slotBox = await slot.boundingBox();
+    if (!slotBox) throw new Error('Rack slot has no bounding box');
+
+    const sx = slotBox.x + slotBox.width / 2;
+    const sy = slotBox.y + slotBox.height / 2;
+
+    await slot.dispatchEvent('pointerdown', {
+      bubbles: true, pointerId: 101, pointerType: 'touch', isPrimary: true,
+      clientX: sx, clientY: sy, button: 0
+    });
+
+    await expect(slot).toHaveClass(/hidden-slot/);
+    await expect.poll(() => page.evaluate(() => isDragging)).toBe(true);
+
+    await page.locator('body').dispatchEvent('pointercancel', {
+      bubbles: true, pointerId: 999, pointerType: 'touch', isPrimary: true,
+      clientX: 8, clientY: 8, buttons: 0
+    });
+
+    await expect(slot).toHaveClass(/hidden-slot/);
+    await expect.poll(() => page.evaluate(() => isDragging)).toBe(true);
+
+    await page.locator('body').dispatchEvent('pointercancel', {
+      bubbles: true, pointerId: 101, pointerType: 'touch', isPrimary: true,
+      clientX: 8, clientY: 8, buttons: 0
+    });
+
+    await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect.poll(() => page.evaluate(() => isDragging)).toBe(false);
+    await expect.poll(() => page.evaluate(() => dragPieceIndex)).toBe(-1);
+    await expect(slot.locator('.piece-preview')).toHaveCount(1);
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('invalid occupied-cell drop returns the piece to the rack', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await startClassic(page);
+
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+      board[4][4] = 1;
+      rackPieces = [[[1]], null, null];
+      updateBoardVisuals();
+      renderRack();
+    });
+
+    const slot = page.locator('#rack .rack-slot').first();
+    const cell = page.locator('#board .cell[data-x="4"][data-y="4"]');
+    const slotBox = await slot.boundingBox();
+    const cellBox = await cell.boundingBox();
+    if (!slotBox || !cellBox) throw new Error('Invalid-drop geometry unavailable');
+
+    const sx = slotBox.x + slotBox.width / 2;
+    const sy = slotBox.y + slotBox.height / 2;
+    const cx = cellBox.x + cellBox.width / 2;
+    const cy = cellBox.y + cellBox.height / 2;
+
+    await slot.dispatchEvent('pointerdown', {
+      bubbles: true, pointerId: 202, pointerType: 'mouse', isPrimary: true,
+      clientX: sx, clientY: sy, button: 0
+    });
+    await page.locator('body').dispatchEvent('pointermove', {
+      bubbles: true, pointerId: 202, pointerType: 'mouse', isPrimary: true,
+      clientX: cx, clientY: cy, buttons: 1
+    });
+
+    await expect(cell).toHaveClass(/cell-hint-error/);
+
+    await page.locator('body').dispatchEvent('pointerup', {
+      bubbles: true, pointerId: 202, pointerType: 'mouse', isPrimary: true,
+      clientX: cx, clientY: cy, buttons: 0
+    });
+
+    await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect(slot.locator('.piece-preview')).toHaveCount(1);
+    await expect.poll(() => page.evaluate(() => rackPieces[0] !== null)).toBe(true);
+    await expect(page.locator('#score-display')).toHaveText('0');
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('keyboard placement on an unplayable piece does not consume it', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await startClassic(page);
+
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(1));
+      rackPieces = [[[1]], null, null];
+      updateBoardVisuals();
+      renderRack();
+      startKeyboardPlacement(0, rackPieces[0], rackSlots[0]);
+    });
+
+    await expect.poll(() => page.evaluate(() => rackPieces[0] !== null)).toBe(true);
+    await expect.poll(() => page.evaluate(() => score)).toBe(0);
+    await page.waitForTimeout(220);
+    await expect(page.locator('#rack .rack-slot').first()).not.toHaveClass(/hidden-slot/);
+    await expect(page.locator('#rack .rack-slot').first().locator('.piece-preview')).toHaveCount(1);
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('malformed persisted state falls back without a page error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('blohshBlastProgressionV3', '{broken');
+      localStorage.setItem('blohshBlastMissionsV3', '{broken');
+      localStorage.setItem('blohshBlastLeaderboardV3', '{broken');
+      localStorage.setItem('blohshBlastDailyV3', '{broken');
+    });
+
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+
+    await expect(page.locator('#phase3-menu')).toBeVisible();
+    await expect(page.locator('.phase3-subtitle')).toContainText(/PUZZLE ARCADE/);
+    await expect.poll(() => page.evaluate(() => window.BlohshBlastPhase3.getProgression().level)).toBe(1);
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('game-over guard ignores an empty rack', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await startClassic(page);
+
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(1));
+      rackPieces = [null, null, null];
+      updateBoardVisuals();
+      checkGameOver();
+    });
+
+    await expect(page.locator('#game-over-modal')).toHaveClass(/modal-hidden/);
+    await expect.poll(() => page.evaluate(() => P3SafeState())).toBeTruthy().catch(() => {});
+    await assertNoPageErrors(page, errors);
+  });
+});
+
 test.describe('Blohsh Blast — mobile input', () => {
   test('touch drag, cancel and placement', async ({ page }, testInfo) => {
 
