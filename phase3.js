@@ -1745,7 +1745,7 @@
           </div>
         </div>
         <div class="phase3-brand">
-          <img src="./logo-official.svg" alt="Logo oficial Blohsh Blast" class="phase3-logo">
+          <img src="./src/logo-official.png" alt="Logo oficial Blohsh Blast" class="phase3-logo">
           <h1 class="phase3-title">BLOHSH<br>BLAST</h1>
           <p class="phase3-subtitle">PUZZLE ARCADE // PC EDITION</p>
         </div>
@@ -1831,7 +1831,7 @@
 
   function patchExistingUI() {
     const logo = document.querySelector('header img.brand-logo');
-    if (logo) logo.src = './logo-official.svg';
+    if (logo) logo.src = './src/logo-official.png';
 
     const head = document.head;
     if (!head.querySelector('link[rel="manifest"]')) {

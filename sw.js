@@ -1,10 +1,10 @@
-const CACHE_NAME = 'blohsh-blast-v6';
+const CACHE_NAME = 'blohsh-blast-v7';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
-  './logo-official.svg',
+  './src/logo-official.png',
   './phase3.js'
 ];
 
