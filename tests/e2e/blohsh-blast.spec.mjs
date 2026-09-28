@@ -9,6 +9,11 @@ async function assertNoPageErrors(page, errors) {
 async function installErrorCapture(page) {
   const errors = [];
   page.on('pageerror', error => errors.push(error));
+  page.on('console', message => {
+    if (message.type() === 'error') {
+      errors.push(new Error(`console.error: ${message.text()}`));
+    }
+  });
   return errors;
 }
 
@@ -331,6 +336,124 @@ test.describe('Blohsh Blast — mobile input', () => {
 
     await expect(slot.locator('.piece-preview')).toHaveCount(0);
     await expect(page.locator('#score-display')).not.toHaveText('0');
+    await assertNoPageErrors(page, errors);
+  });
+});
+
+
+test.describe('Blohsh Blast — error + skipped-path regressions', () => {
+  test('invalid drop on occupied cell keeps the piece and score stable', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await page.locator('[data-pc-action="play"]').click();
+
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(1));
+      board[0][0] = 0;
+      rackPieces = [[[1]], null, null];
+      score = 0;
+      updateBoardVisuals();
+      renderRack();
+    });
+
+    const slot = page.locator('#rack .rack-slot').first();
+    const target = page.locator('#board .cell[data-x="4"][data-y="4"]');
+    const slotBox = await slot.boundingBox();
+    const targetBox = await target.boundingBox();
+    if (!slotBox || !targetBox) throw new Error('Invalid-drop geometry unavailable');
+
+    const sx = slotBox.x + slotBox.width / 2;
+    const sy = slotBox.y + slotBox.height / 2;
+    const tx = targetBox.x + targetBox.width / 2;
+    const ty = targetBox.y + targetBox.height / 2 + 58;
+
+    await slot.dispatchEvent('pointerdown', {
+      bubbles: true, pointerId: 91, pointerType: 'touch', isPrimary: true,
+      clientX: sx, clientY: sy, button: 0
+    });
+    await page.locator('body').dispatchEvent('pointermove', {
+      bubbles: true, pointerId: 91, pointerType: 'touch', isPrimary: true,
+      clientX: tx, clientY: ty, buttons: 1
+    });
+    await page.locator('body').dispatchEvent('pointerup', {
+      bubbles: true, pointerId: 91, pointerType: 'touch', isPrimary: true,
+      clientX: tx, clientY: ty, buttons: 0
+    });
+
+    await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect(slot.locator('.piece-preview')).toHaveCount(1);
+    await expect(page.locator('#score-display')).toHaveText('0');
+
+    const state = await page.evaluate(() => ({ validEmptyCell: board[0][0], occupiedTarget: board[4][4] }));
+    expect(state.validEmptyCell).toBe(0);
+    expect(state.occupiedTarget).toBe(1);
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('reset during an active drag clears transient drag state', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await page.locator('[data-pc-action="play"]').click();
+
+    const slot = page.locator('#rack .rack-slot').first();
+    const board = page.locator('#board');
+    const slotBox = await slot.boundingBox();
+    const boardBox = await board.boundingBox();
+    if (!slotBox || !boardBox) throw new Error('Reset-drag geometry unavailable');
+
+    await slot.dispatchEvent('pointerdown', {
+      bubbles: true, pointerId: 92, pointerType: 'touch', isPrimary: true,
+      clientX: slotBox.x + slotBox.width / 2,
+      clientY: slotBox.y + slotBox.height / 2,
+      button: 0
+    });
+    await board.dispatchEvent('pointermove', {
+      bubbles: true, pointerId: 92, pointerType: 'touch', isPrimary: true,
+      clientX: boardBox.x + boardBox.width / 2,
+      clientY: boardBox.y + boardBox.height / 2, buttons: 1
+    });
+
+    await page.evaluate(() => resetGame());
+
+    await expect(slot).not.toHaveClass(/hidden-slot/);
+    await expect(page.locator('#dragging-container')).toHaveCSS('display', 'none');
+    await expect(page.locator('.cell-hint, .cell-hint-error')).toHaveCount(0);
+
+    const transient = await page.evaluate(() => ({
+      hasDraggingClass: document.body.classList.contains('is-dragging'),
+      hiddenSlots: document.querySelectorAll('.rack-slot.hidden-slot').length
+    }));
+    expect(transient.hasDraggingClass).toBe(false);
+    expect(transient.hiddenSlots).toBe(0);
+    await assertNoPageErrors(page, errors);
+  });
+
+  test('game-over sound guard is idempotent on repeated checks', async ({ page }) => {
+    const errors = await installErrorCapture(page);
+    await openMenu(page);
+    await page.locator('[data-pc-action="play"]').click();
+
+    await page.evaluate(() => {
+      board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(1));
+      rackPieces = [[[1]], null, null];
+      updateBoardVisuals();
+      renderRack();
+    });
+
+    const calls = await page.evaluate(() => {
+      let count = 0;
+      const original = playSound;
+      playSound = kind => {
+        if (kind === 'gameover') count += 1;
+        original(kind);
+      };
+      checkGameOver();
+      checkGameOver();
+      return count;
+    });
+
+    expect(calls).toBe(1);
+    await expect(page.locator('#game-over-modal')).not.toHaveClass(/modal-hidden/);
     await assertNoPageErrors(page, errors);
   });
 });
