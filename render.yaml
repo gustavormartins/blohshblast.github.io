@@ -3,7 +3,7 @@ services:
     name: blohsh-blast
     runtime: static
     branch: refactor/phase-4-typescript-architecture
-    autoDeploy: true
+    autoDeployTrigger: commit
     buildCommand: npm install --no-audit --no-fund && npm run build
     staticPublishPath: ./dist
     headers:
