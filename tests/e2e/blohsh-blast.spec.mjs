@@ -321,46 +321,6 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
       .map(([url]) => url));
     expect(failedRequests.every(request => cachedAssetUrls.has(request.url))).toBe(true);
   });
-    });
-
-    await openMenu(page);
-    await page.evaluate(async () => {
-      if ('serviceWorker' in navigator) {
-        await navigator.serviceWorker.ready;
-      }
-    });
-
-    const offlineDiagnostics = await page.evaluate(async () => {
-      const assets = performance.getEntriesByType('resource')
-        .map(entry => entry.name)
-        .filter(url => url.includes('/assets/'));
-      const cacheHits = {};
-      const cacheNames = 'caches' in window ? await caches.keys() : [];
-      for (const url of assets) {
-        cacheHits[url] = 'caches' in window ? await caches.match(url).then(Boolean) : false;
-      }
-      return {
-        controlled: Boolean(navigator.serviceWorker.controller),
-        cacheNames,
-        assets,
-        cacheHits
-      };
-    });
-    console.log('Offline diagnostics before disconnect:', JSON.stringify(offlineDiagnostics, null, 2));
-
-    await context.setOffline(true);
-    await page.reload();
-    await page.locator('#phase3-menu').waitFor({ state: 'visible' });
-    await expect(page.locator('#phase3-offline')).toContainText('OFFLINE');
-    await context.setOffline(false);
-
-    if (failedRequests.length) {
-      console.log('Offline request failures:', JSON.stringify(failedRequests, null, 2));
-    }
-    await assertNoPageErrors(page, errors);
-  });
-});
-
 
 test.describe('Blohsh Blast — mobile input', () => {
   test('touch drag, cancel and placement', async ({ page }, testInfo) => {
