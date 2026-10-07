@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 const legacyFiles = ['phase3.js', 'sw.js', 'manifest.webmanifest', 'icon.svg', 'logo-official-64.png', 'logo-official.svg'];
 
