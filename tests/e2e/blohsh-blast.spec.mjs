@@ -283,6 +283,25 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
         await navigator.serviceWorker.ready;
       }
     });
+
+    const offlineDiagnostics = await page.evaluate(async () => {
+      const assets = performance.getEntriesByType('resource')
+        .map(entry => entry.name)
+        .filter(url => url.includes('/assets/'));
+      const cacheHits = {};
+      const cacheNames = 'caches' in window ? await caches.keys() : [];
+      for (const url of assets) {
+        cacheHits[url] = 'caches' in window ? await caches.match(url).then(Boolean) : false;
+      }
+      return {
+        controlled: Boolean(navigator.serviceWorker.controller),
+        cacheNames,
+        assets,
+        cacheHits
+      };
+    });
+    console.log('Offline diagnostics before disconnect:', JSON.stringify(offlineDiagnostics, null, 2));
+
     await context.setOffline(true);
     await page.reload();
     await page.locator('#phase3-menu').waitFor({ state: 'visible' });
