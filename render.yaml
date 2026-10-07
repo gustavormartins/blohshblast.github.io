@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: blohsh-blast
+    runtime: static
+    branch: refactor/phase-4-typescript-architecture
+    autoDeployTrigger: commit
+    buildCommand: npm install --no-audit --no-fund && npm run build
+    staticPublishPath: ./dist
+    headers:
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests"
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()"
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
+        name: Cross-Origin-Resource-Policy
+        value: same-origin
+      - path: /*
+        name: Strict-Transport-Security
+        value: "max-age=31536000; includeSubDomains"
+
+  - type: web
+    name: blohsh-blast-api
+    runtime: node
+    branch: refactor/phase-4-typescript-architecture
+    region: virginia
+    plan: free
+    rootDir: backend
+    autoDeployTrigger: commit
+    buildCommand: npm install --omit=dev
+    startCommand: npm run migrate && npm start
+    healthCheckPath: /readyz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        value: https://blohsh-blast.onrender.com
+      - key: JWT_ISSUER
+        value: blohsh-blast-api
+      - key: JWT_AUDIENCE
+        value: blohsh-blast-web
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: blohsh-blast-db
+          property: connectionString

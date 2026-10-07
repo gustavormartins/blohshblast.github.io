@@ -1,0 +1,65 @@
+name: Security Hardening
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=20000
+
+      - name: Dependency audit report
+        run: npm audit --json > npm-audit.json || true
+
+
+      - name: Print dependency audit summary
+        run: |
+          node -e "const a=require('./npm-audit.json'); console.log(JSON.stringify(a.metadata?.vulnerabilities ?? {}, null, 2)); for (const [name,v] of Object.entries(a.vulnerabilities ?? {})) console.log(JSON.stringify({name,severity:v.severity,range:v.range,nodes:v.nodes,fixAvailable:v.fixAvailable}))"
+
+      - name: Enforce clean dependency audit
+        run: npm audit --audit-level=moderate
+
+      - name: Static security policy
+        run: npm run security:test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Backend install
+        working-directory: backend
+        run: npm install --no-audit --no-fund
+
+      - name: Backend tests
+        working-directory: backend
+        run: npm test
+
+      - name: Backend dependency audit
+        working-directory: backend
+        run: npm audit --audit-level=high
+
+      - name: Upload dependency audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+          retention-days: 7
