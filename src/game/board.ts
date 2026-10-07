@@ -16,7 +16,7 @@ export const SHAPES: readonly Piece[] = [
   [[1, 0], [1, 1], [1, 0]], [[0, 1], [1, 1], [0, 1]],
   [[1, 1, 0], [0, 1, 1]], [[0, 1, 1], [1, 1, 0]],
   [[1, 0], [1, 1], [0, 1]], [[0, 1], [1, 1], [1, 0]]
-] as readonly;
+];
 
 export function blockCount(piece: Piece): number {
   return piece.reduce((sum, row) => sum + row.filter(cell => cell === 1).length, 0);
