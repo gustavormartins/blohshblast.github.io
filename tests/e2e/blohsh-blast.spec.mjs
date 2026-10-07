@@ -321,6 +321,7 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
       .map(([url]) => url));
     expect(failedRequests.every(request => cachedAssetUrls.has(request.url))).toBe(true);
   });
+});
 
 test.describe('Blohsh Blast — mobile input', () => {
   test('touch drag, cancel and placement', async ({ page }, testInfo) => {
