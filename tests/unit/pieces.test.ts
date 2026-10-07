@@ -9,6 +9,6 @@ describe('pieces', () => {
 
   it('keeps the basic monomino playable', () => {
     const board = Array.from({ length: 8 }, () => Array<0 | 1>(8).fill(0));
-    expect(canFit(board, SHAPES[0], 0, 0)).toBe(true);
+    expect(canFit(board, SHAPES[0]!, 0, 0)).toBe(true);
   });
 });
