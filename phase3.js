@@ -268,11 +268,29 @@
       : { date: today, best: 0 };
   }
 
+  function normalizeNickname(value) {
+    return String(value ?? '')
+      .replace(/[^a-zA-Z0-9 _-]/g, '')
+      .slice(0, 16) || 'PLAYER';
+  }
+
+  function normalizeMode(value) {
+    return Object.prototype.hasOwnProperty.call(P3.MODES, value) ? value : 'classic';
+  }
+
   function loadLeaderboard() {
     const saved = readJSON(P3.LEADERBOARD_KEY, []);
-    return Array.isArray(saved)
-      ? saved.filter(entry => entry && Number.isFinite(Number(entry.score))).slice(0, 50)
-      : [];
+    if (!Array.isArray(saved)) return [];
+
+    return saved
+      .filter(entry => entry && Number.isFinite(Number(entry.score)))
+      .slice(0, 50)
+      .map(entry => ({
+        name: normalizeNickname(entry.name),
+        score: Math.max(0, Math.round(Number(entry.score))),
+        mode: normalizeMode(entry.mode),
+        date: typeof entry.date === 'string' ? entry.date.slice(0, 10) : ''
+      }));
   }
 
   function saveLeaderboard() {
@@ -286,9 +304,9 @@
     if (!finalScore || finalScore <= 0) return;
 
     const entry = {
-      name: P3.nickname || 'PLAYER',
-      score: Math.round(finalScore),
-      mode: P3.MODE.S.label,
+      name: normalizeNickname(P3.nickname),
+      score: Math.max(0, Math.round(Number(finalScore) || 0)),
+      mode: normalizeMode(P3.mode),
       date: dateKey()
     };
 
@@ -525,7 +543,7 @@
       `<div class="p3-leader-row">
         <span>${String(index + 1).padStart(2, '0')}</span>
         <b>${escapeHTML(entry.name)}</b>
-        <small>${entry.mode}</small>
+        <small>${escapeHTML(P3.MODES[normalizeMode(entry.mode)]?.label || 'CLASSIC')}</small>
         <strong>${Number(entry.score).toLocaleString('pt-BR')}</strong>
       </div>`
     ).join('');
@@ -609,7 +627,7 @@
 
     $('phase3-nickname').addEventListener('input', event => {
       const clean = event.target.value.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 16);
-      P3.nickname = clean || 'PLAYER';
+      P3.nickname = normalizeNickname(clean);
       localStorage.setItem(P3.NICKNAME_KEY, P3.nickname);
       renderLeaderboard();
     });
@@ -1861,7 +1879,7 @@
     }
 
     if (typeof nickname !== 'undefined') {
-      P3.nickname = localStorage.getItem(P3.NICKNAME_KEY) || 'PLAYER';
+      P3.nickname = normalizeNickname(localStorage.getItem(P3.NICKNAME_KEY));
     }
   }
 
