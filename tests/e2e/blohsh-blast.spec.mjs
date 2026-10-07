@@ -284,6 +284,52 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
       }
     });
 
+    const diagnostics = await page.evaluate(async () => {
+      const assets = performance.getEntriesByType('resource')
+        .map(entry => entry.name)
+        .filter(url => url.includes('/assets/'));
+      const cacheHits = {};
+      for (const url of assets) {
+        cacheHits[url] = 'caches' in window ? await caches.match(url).then(Boolean) : false;
+      }
+      return {
+        controlled: Boolean(navigator.serviceWorker.controller),
+        cacheHits
+      };
+    });
+
+    expect(diagnostics.controlled).toBe(true);
+    expect(Object.values(diagnostics.cacheHits).every(Boolean)).toBe(true);
+    await assertNoPageErrors(page, errors);
+
+    errors.length = 0;
+    failedRequests.length = 0;
+    await context.setOffline(true);
+    await page.reload();
+    await page.locator('#phase3-menu').waitFor({ state: 'visible' });
+    await expect(page.locator('#phase3-offline')).toContainText('OFFLINE');
+    await context.setOffline(false);
+
+    const unexpectedErrors = errors.filter(error => {
+      const message = String(error);
+      return !message.includes('console.error: Failed to load resource: net::ERR_FAILED');
+    });
+    expect(unexpectedErrors).toEqual([]);
+
+    const cachedAssetUrls = new Set(Object.entries(diagnostics.cacheHits)
+      .filter(([, cached]) => cached)
+      .map(([url]) => url));
+    expect(failedRequests.every(request => cachedAssetUrls.has(request.url))).toBe(true);
+  });
+    });
+
+    await openMenu(page);
+    await page.evaluate(async () => {
+      if ('serviceWorker' in navigator) {
+        await navigator.serviceWorker.ready;
+      }
+    });
+
     const offlineDiagnostics = await page.evaluate(async () => {
       const assets = performance.getEntriesByType('resource')
         .map(entry => entry.name)
