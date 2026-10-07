@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { randomUUID, randomInt } from 'node:crypto';
 import { URL } from 'node:url';
 import { authConfigured, getBearerToken, signAccessToken, verifyAccessToken } from './auth.mjs';
-import { closeDb, dbConfigured, query } from './db.mjs';
+import { closeDb, dbConfigured, query, transaction } from './db.mjs';
 import { hashPassword, verifyPassword } from './password.mjs';
 import { MemoryRateLimiter } from './rate-limit.mjs';
 import {
@@ -340,41 +340,61 @@ async function handle(request, response) {
       return;
     }
 
-    const runResult = await query(
-      'SELECT id, user_id, mode, status FROM game_runs WHERE id = $1',
-      [payload.runId]
-    );
-    const run = runResult.rows[0];
+    try {
+      await transaction(async client => {
+        const runResult = await client.query(
+          'SELECT id, user_id, mode, status FROM game_runs WHERE id = $1 FOR UPDATE',
+          [payload.runId]
+        );
+        const run = runResult.rows[0];
 
-    if (!run || run.user_id !== user.id) {
-      send(response, request, 404, { error: 'run_not_found' });
-      return;
+        if (!run || run.user_id !== user.id) {
+          const error = new Error('RUN_NOT_FOUND');
+          error.code = 'RUN_NOT_FOUND';
+          throw error;
+        }
+
+        if (run.status !== 'active' || run.mode !== payload.mode) {
+          const error = new Error('RUN_NOT_WRITABLE');
+          error.code = 'RUN_NOT_WRITABLE';
+          throw error;
+        }
+
+        await client.query(
+          'INSERT INTO scores (run_id, user_id, mode, score, moves, lines, combo, perfect_clear, rules_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+          [
+            payload.runId,
+            user.id,
+            payload.mode,
+            payload.score,
+            payload.moves,
+            payload.lines,
+            payload.combo,
+            payload.perfectClear,
+            payload.rulesVersion
+          ]
+        );
+
+        await client.query(
+          "UPDATE game_runs SET status = 'finished', finished_at = now() WHERE id = $1",
+          [payload.runId]
+        );
+      });
+    } catch (error) {
+      if (error.code === 'RUN_NOT_FOUND') {
+        send(response, request, 404, { error: 'run_not_found' });
+        return;
+      }
+      if (error.code === 'RUN_NOT_WRITABLE') {
+        send(response, request, 409, { error: 'run_not_writable' });
+        return;
+      }
+      if (error.code === '23505') {
+        send(response, request, 409, { error: 'run_already_scored' });
+        return;
+      }
+      throw error;
     }
-
-    if (run.status !== 'active' || run.mode !== payload.mode) {
-      send(response, request, 409, { error: 'run_not_writable' });
-      return;
-    }
-
-    await query(
-      'INSERT INTO scores (run_id, user_id, mode, score, moves, lines, combo, perfect_clear, rules_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-      [
-        payload.runId,
-        user.id,
-        payload.mode,
-        payload.score,
-        payload.moves,
-        payload.lines,
-        payload.combo,
-        payload.perfectClear,
-        payload.rulesVersion
-      ]
-    );
-
-    await query(
-      "UPDATE game_runs SET status = 'finished', finished_at = now() WHERE id = $1",
-      [payload.runId]
-    );
 
     send(response, request, 201, { data: { accepted: true } });
     return;
