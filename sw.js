@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blohsh-blast-v7';
+const CACHE_NAME = 'blohsh-blast-v8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -21,10 +21,42 @@ function isStaticAssetRequest(request) {
   return ['script', 'style', 'image', 'font', 'manifest'].includes(request.destination);
 }
 
+async function cacheBuiltAssets(cache) {
+  const response = await fetch('./index.html', { cache: 'no-store' });
+  if (!response.ok) return;
+
+  const html = await response.text();
+  const assetUrls = new Set();
+  const attributePattern = /(?:src|href)=["']([^"']+)["']/gi;
+  let match;
+
+  while ((match = attributePattern.exec(html)) !== null) {
+    const value = match[1];
+    if (!value || value.startsWith('#') || value.startsWith('data:') || value.startsWith('blob:')) continue;
+
+    const url = new URL(value, self.location.href);
+    if (url.origin === self.location.origin && ['http:', 'https:'].includes(url.protocol)) {
+      assetUrls.add(url.href);
+    }
+  }
+
+  await Promise.all([...assetUrls].map(async url => {
+    try {
+      const assetResponse = await fetch(url, { cache: 'no-store' });
+      if (assetResponse.ok) await cache.put(url, assetResponse.clone());
+    } catch (_) {
+      // A single optional asset must not prevent the application shell from installing.
+    }
+  }));
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(async cache => {
+        await cache.addAll(APP_SHELL);
+        await cacheBuiltAssets(cache);
+      })
       .then(() => self.skipWaiting())
   );
 });
