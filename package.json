@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run test && npm run security:test && npm run build",
     "audit": "npm audit --audit-level=high",
-    "security:test": "node tests/security/source-policy.mjs"
+    "security:test": "node tests/security/source-policy.mjs",
+    "security:live": "node tests/security/live-site-smoke.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
