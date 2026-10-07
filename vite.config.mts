@@ -9,7 +9,7 @@ export default defineConfig({
   server: { host: '127.0.0.1', port: 4173 },
   preview: { host: '127.0.0.1', port: 4173 },
   build: {
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       plugins: [{
         name: 'copy-legacy-root-assets',
