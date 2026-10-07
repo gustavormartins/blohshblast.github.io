@@ -409,6 +409,13 @@
       return;
     }
 
+    // Do not trigger a service-worker update fetch while the browser is offline.
+    // The installed worker and its cache should remain the source of truth.
+    if (navigator.onLine === false) {
+      updateOfflineStatus(false);
+      return;
+    }
+
     navigator.serviceWorker.register('./sw.js')
       .then(() => updateOfflineStatus(true))
       .catch(() => updateOfflineStatus(false));
