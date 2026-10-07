@@ -1,11 +1,25 @@
-const CACHE_NAME = 'blohsh-blast-v6';
+const CACHE_NAME = 'blohsh-blast-v7';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
-  './phase3.js'
+  './logo-official-64.png',
+  './phase3.js',
+  './legacy-game.js'
 ];
+
+function isSameOrigin(request) {
+  return new URL(request.url).origin === self.location.origin;
+}
+
+function isApiRequest(url) {
+  return url.pathname === '/api' || url.pathname.startsWith('/api/');
+}
+
+function isStaticAssetRequest(request) {
+  return ['script', 'style', 'image', 'font', 'manifest'].includes(request.destination);
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -26,22 +40,37 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request)
+  const request = event.request;
+  if (request.method !== 'GET' || !isSameOrigin(request)) return;
+
+  const url = new URL(request.url);
+  if (isApiRequest(url)) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
         .then(response => {
-          if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return response;
+          if (response.ok) return response;
+          throw new Error('Navigation failed with ' + response.status);
         })
-        .catch(() => {
-          if (event.request.mode === 'navigate') return caches.match('./index.html');
-          return Response.error();
-        });
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  if (!isStaticAssetRequest(request)) return;
+
+  event.respondWith(
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+
+      return fetch(request).then(response => {
+        if (!response.ok) return response;
+
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
+      });
     })
   );
 });
