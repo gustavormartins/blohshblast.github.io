@@ -31,3 +31,30 @@ services:
       - path: /*
         name: Strict-Transport-Security
         value: "max-age=31536000; includeSubDomains"
+
+  - type: web
+    name: blohsh-blast-api
+    runtime: node
+    branch: refactor/phase-4-typescript-architecture
+    region: virginia
+    plan: free
+    rootDir: backend
+    autoDeployTrigger: commit
+    buildCommand: npm install --omit=dev
+    startCommand: npm run migrate && npm start
+    healthCheckPath: /readyz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        value: https://blohsh-blast.onrender.com
+      - key: JWT_ISSUER
+        value: blohsh-blast-api
+      - key: JWT_AUDIENCE
+        value: blohsh-blast-web
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: blohsh-blast-db
+          property: connectionString
