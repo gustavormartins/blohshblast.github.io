@@ -56,6 +56,9 @@ test.describe('Blohsh Blast — core gameplay', () => {
 
     const errors = await installErrorCapture(page);
     await openMenu(page);
+    const logo = page.locator('.brand-logo').first();
+    await expect(logo).toHaveAttribute('src', /logo-official-64/);
+    await expect(logo).not.toHaveAttribute('src', /upload\\.wikimedia\\.org/);
 
     const isPC = testInfo.project.name === 'pc';
     const expectedEdition = isPC ? 'PC EDITION' : 'MOBILE EDITION';
