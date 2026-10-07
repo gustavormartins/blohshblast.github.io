@@ -1,0 +1,16 @@
+/* Phase 4 visual seam. Existing game CSS stays authoritative during the migration. */
+html[data-architecture="phase4"] {
+  --phase4-ready: 1;
+}
+
+[data-architecture="typed"] {
+  contain: layout style;
+}
+
+.brand-logo,
+.phase3-logo {
+  width: auto;
+  max-width: 64px;
+  height: 58px;
+  object-fit: contain;
+}
