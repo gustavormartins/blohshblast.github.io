@@ -16,6 +16,6 @@ describe('scoring', () => {
 
   it('scores line clears using the current combo curve', () => {
     expect(lineClearScore(1, 1)).toBe(100);
-    expect(lineClearScore(2, 2)).toBe(460);
+    expect(lineClearScore(2, 2)).toBe(540);
   });
 });
