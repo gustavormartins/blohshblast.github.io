@@ -49,13 +49,13 @@ export function findCompletedLines(board: Board): CompletedLines {
   const columns: number[] = [];
 
   for (let y = 0; y < BOARD_SIZE; y += 1) {
-    if (board[y].every(cell => cell === 1)) rows.push(y);
+    if (board[y]!.every(cell => cell === 1)) rows.push(y);
   }
 
   for (let x = 0; x < BOARD_SIZE; x += 1) {
     let full = true;
     for (let y = 0; y < BOARD_SIZE; y += 1) {
-      if (board[y][x] === 0) full = false;
+      if (board[y]![x] === 0) full = false;
     }
     if (full) columns.push(x);
   }
@@ -67,7 +67,7 @@ export function placePiece(board: Board, piece: Piece, anchorX: number, anchorY:
   const next = board.map(row => [...row] as Cell[]);
   for (let y = 0; y < piece.length; y += 1) {
     for (let x = 0; x < piece[y].length; x += 1) {
-      if (piece[y][x] === 1) next[anchorY + y][anchorX + x] = 1;
+      if (piece[y][x] === 1) next[anchorY + y]![anchorX + x] = 1;
     }
   }
   return next;
@@ -75,7 +75,7 @@ export function placePiece(board: Board, piece: Piece, anchorX: number, anchorY:
 
 export function clearLines(board: Board, lines: CompletedLines): Board {
   const next = board.map(row => [...row] as Cell[]);
-  for (const y of lines.rows) next[y].fill(0);
-  for (const x of lines.columns) for (let y = 0; y < BOARD_SIZE; y += 1) next[y][x] = 0;
+  for (const y of lines.rows) next[y]!.fill(0);
+  for (const x of lines.columns) for (let y = 0; y < BOARD_SIZE; y += 1) next[y]![x] = 0;
   return next;
 }
