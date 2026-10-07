@@ -269,6 +269,14 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
 
   test('offline reload after first visit', async ({ context, page }) => {
     const errors = await installErrorCapture(page);
+    const failedRequests = [];
+    page.on('requestfailed', request => {
+      failedRequests.push({
+        url: request.url(),
+        failure: request.failure()?.errorText || 'unknown'
+      });
+    });
+
     await openMenu(page);
     await page.evaluate(async () => {
       if ('serviceWorker' in navigator) {
@@ -280,6 +288,10 @@ test.describe('Blohsh Blast — device + PWA/offline', () => {
     await page.locator('#phase3-menu').waitFor({ state: 'visible' });
     await expect(page.locator('#phase3-offline')).toContainText('OFFLINE');
     await context.setOffline(false);
+
+    if (failedRequests.length) {
+      console.log('Offline request failures:', JSON.stringify(failedRequests, null, 2));
+    }
     await assertNoPageErrors(page, errors);
   });
 });
