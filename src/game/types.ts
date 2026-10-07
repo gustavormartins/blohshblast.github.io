@@ -31,22 +31,20 @@ export interface GameState {
   drag: DragState;
 }
 
-export type GameEventName =
-  | 'piecePlaced'
-  | 'linesCleared'
-  | 'perfectClear'
-  | 'gameOver'
-  | 'scoreChanged'
-  | 'reset';
-
-export interface GameEventMap {
+export type GameEventMap = {
   piecePlaced: { amount: number };
   linesCleared: { amount: number };
   perfectClear: Record<string, never>;
   gameOver: { score: number };
   scoreChanged: { score: number };
   reset: { score: number };
-}
+};
+
+export type GameEventName = keyof GameEventMap;
+
+export type GameEvent<T extends GameEventName = GameEventName> = {
+  [K in T]: { type: K; detail: GameEventMap[K] }
+}[T];
 
 export interface LegacyGameRuntimeApi {
   getState(): Pick<GameState, 'board' | 'score' | 'combo' | 'rack' | 'gameOver'>;
