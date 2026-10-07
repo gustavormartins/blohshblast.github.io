@@ -27,9 +27,13 @@ jobs:
       - name: Dependency audit report
         run: npm audit --json > npm-audit.json || true
 
+
       - name: Print dependency audit summary
         run: |
           node -e "const a=require('./npm-audit.json'); console.log(JSON.stringify(a.metadata?.vulnerabilities ?? {}, null, 2)); for (const [name,v] of Object.entries(a.vulnerabilities ?? {})) console.log(JSON.stringify({name,severity:v.severity,range:v.range,nodes:v.nodes,fixAvailable:v.fixAvailable}))"
+
+      - name: Enforce clean dependency audit
+        run: npm audit --audit-level=moderate
 
       - name: Static security policy
         run: npm run security:test
