@@ -24,12 +24,12 @@ export function blockCount(piece: Piece): number {
 
 export function canFit(board: Board, piece: Piece, anchorX: number, anchorY: number): boolean {
   for (let y = 0; y < piece.length; y += 1) {
-    for (let x = 0; x < piece[y].length; x += 1) {
-      if (piece[y][x] !== 1) continue;
+    for (let x = 0; x < piece[y]!.length; x += 1) {
+      if (piece[y]![x] !== 1) continue;
       const boardX = anchorX + x;
       const boardY = anchorY + y;
       if (boardX < 0 || boardY < 0 || boardX >= BOARD_SIZE || boardY >= BOARD_SIZE) return false;
-      if (board[boardY][boardX] === 1) return false;
+      if (board[boardY]![boardX] === 1) return false;
     }
   }
   return true;
@@ -66,8 +66,8 @@ export function findCompletedLines(board: Board): CompletedLines {
 export function placePiece(board: Board, piece: Piece, anchorX: number, anchorY: number): Board {
   const next = board.map(row => [...row] as Cell[]);
   for (let y = 0; y < piece.length; y += 1) {
-    for (let x = 0; x < piece[y].length; x += 1) {
-      if (piece[y][x] === 1) next[anchorY + y]![anchorX + x] = 1;
+    for (let x = 0; x < piece[y]!.length; x += 1) {
+      if (piece[y]![x] === 1) next[anchorY + y]![anchorX + x] = 1;
     }
   }
   return next;
