@@ -1104,6 +1104,18 @@
     let soundEnabled = localStorage.getItem(SOUND_KEY) !== '0';
     let stats = loadStats();
 
+    // --- PHASE 4 TYPED RUNTIME SEAM ---
+    const runtimeSubscribers = new Set();
+
+    function emitRuntimeEvent(type, detail = {}) {
+      runtimeSubscribers.forEach(listener => {
+        try {
+          listener({ type, detail });
+        } catch (_) {}
+      });
+    }
+
+
     // Drag state
     let isDragging = false;
     let dragPieceIndex = -1;
@@ -1815,6 +1827,7 @@
       if (bridge && typeof bridge.onPiecePlaced === 'function') {
         bridge.onPiecePlaced(1);
       }
+      emitRuntimeEvent('piecePlaced', { amount: 1 });
       playSound('place');
       triggerVibration(8);
       showScorePopup(blocksPlaced * 10);
@@ -1926,6 +1939,7 @@
       if (bridge && typeof bridge.onLinesCleared === 'function') {
         bridge.onLinesCleared(totalLines);
       }
+      emitRuntimeEvent('linesCleared', { amount: totalLines });
 
       addScore(
         clearScore,
@@ -1940,6 +1954,7 @@
         if (bridge && typeof bridge.onPerfectClear === 'function') {
           bridge.onPerfectClear();
         }
+        emitRuntimeEvent('perfectClear', {});
         showPerfectClear();
       }
 
@@ -1979,6 +1994,7 @@
       const awardedPoints = Math.round(points * multiplier);
 
       score += awardedPoints;
+      emitRuntimeEvent('scoreChanged', { score });
       animateScoreTo(score);
 
       if (score > highScore) {
@@ -2096,6 +2112,7 @@
         if (bridge && typeof bridge.onGameOver === 'function') {
           bridge.onGameOver(score);
         }
+        emitRuntimeEvent('gameOver', { score });
       }
     }
 
@@ -2128,10 +2145,35 @@
       updateSkin();
       updateBoardVisuals();
       generateRack();
+      emitRuntimeEvent('reset', { score: 0 });
     }
 
     init();
+
+    window.BlohshBlastLegacyRuntime = {
+      getState: () => ({
+        board: board.map(row => [...row]),
+        score,
+        combo,
+        rack: rackPieces.map(piece => piece ? piece.map(row => [...row]) : null),
+        gameOver: !gameOverModal.classList.contains('modal-hidden')
+      }),
+      reset: () => resetGame(),
+      placeFirstAvailable: index => {
+        const piece = rackPieces[index];
+        const slot = rackSlots[index];
+        if (!piece || !slot) return false;
+        startKeyboardPlacement(index, piece, slot);
+        return true;
+      },
+      subscribe: listener => {
+        if (typeof listener !== 'function') return () => {};
+        runtimeSubscribers.add(listener);
+        return () => runtimeSubscribers.delete(listener);
+      }
+    };
   </script>
   <script src="./phase3.js"></script>
+  <script type="module" src="./src/main.ts"></script>
 </body>
 </html>
