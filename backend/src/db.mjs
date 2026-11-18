@@ -1,34 +1,49 @@
 import pg from 'pg';
 import { buildDatabasePoolOptions } from './db-config.mjs';
+import { resolveDatabaseCa } from './supabase-ca.mjs';
 
 const { Pool } = pg;
-
-const poolOptions = buildDatabasePoolOptions((process.env.DATABASE_URL || process.env.POSTGRES_URL), {
-  production: process.env.NODE_ENV === 'production',
-  certificateAuthority: process.env.PG_SSL_CA
-});
-const pool = poolOptions ? new Pool(poolOptions) : null;
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+let poolPromise = null;
 
 export function dbConfigured() {
-  return Boolean(pool);
+  return Boolean(connectionString);
 }
 
-export async function query(text, values = []) {
-  if (!pool) {
+async function getPool() {
+  if (!connectionString) {
     const error = new Error('DATABASE_NOT_CONFIGURED');
     error.code = 'DATABASE_NOT_CONFIGURED';
     throw error;
   }
+
+  if (!poolPromise) {
+    poolPromise = (async () => {
+      const production = process.env.NODE_ENV === 'production';
+      const certificateAuthority = await resolveDatabaseCa(connectionString, {
+        production,
+        certificateAuthority: process.env.PG_SSL_CA
+      });
+      const options = buildDatabasePoolOptions(connectionString, {
+        production,
+        certificateAuthority
+      });
+      return new Pool(options);
+    })().catch(error => {
+      poolPromise = null; // Allow another cold-start attempt after transient fetch failure.
+      throw error;
+    });
+  }
+  return poolPromise;
+}
+
+export async function query(text, values = []) {
+  const pool = await getPool();
   return pool.query(text, values);
 }
 
 export async function transaction(callback) {
-  if (!pool) {
-    const error = new Error('DATABASE_NOT_CONFIGURED');
-    error.code = 'DATABASE_NOT_CONFIGURED';
-    throw error;
-  }
-
+  const pool = await getPool();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -44,5 +59,9 @@ export async function transaction(callback) {
 }
 
 export async function closeDb() {
-  if (pool) await pool.end();
+  if (poolPromise) {
+    const pool = await poolPromise;
+    await pool.end();
+    poolPromise = null;
+  }
 }
