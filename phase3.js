@@ -392,6 +392,7 @@
     updateBoardVisuals();
     generateRack();
     updateModeChip();
+    window.dispatchEvent(new CustomEvent('blohsh:game-start', { detail: { mode: P3.mode } }));
   }
 
   function resetGame() {
