@@ -197,7 +197,7 @@ async function handle(request, response) {
     const requestedLimit = Number(url.searchParams.get('limit') || 20);
     const limit = Number.isFinite(requestedLimit) ? Math.min(50, Math.max(1, Math.trunc(requestedLimit))) : 20;
     const result = await query(
-      'SELECT score, mode, created_at FROM scores WHERE mode = $1 ORDER BY score DESC, created_at ASC LIMIT $2',
+      'SELECT s.score, s.mode, s.created_at, u.nickname FROM scores s JOIN users u ON u.id = s.user_id WHERE s.mode = $1 ORDER BY s.score DESC, s.created_at ASC LIMIT $2',
       [parsedMode.data, limit]
     );
 
@@ -205,6 +205,7 @@ async function handle(request, response) {
       data: result.rows.map(row => ({
         score: row.score,
         mode: row.mode,
+        nickname: row.nickname,
         createdAt: row.created_at
       }))
     });
@@ -236,8 +237,8 @@ async function handle(request, response) {
     const userId = randomUUID();
     const passwordHash = await hashPassword(payload.password);
     await query(
-      'INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, $3, $4)',
-      [userId, payload.email, passwordHash, 'user']
+      'INSERT INTO users (id, email, password_hash, role, nickname) VALUES ($1, $2, $3, $4, $5)',
+      [userId, payload.email, passwordHash, 'user', payload.nickname || 'PLAYER']
     );
 
     const token = await signAccessToken({ id: userId, role: 'user' });
@@ -285,7 +286,7 @@ async function handle(request, response) {
     if (!(await rateLimit(response, request, 'me:' + user.id, 60, 60_000))) return;
 
     const result = await query(
-      'SELECT id, email, role, created_at FROM users WHERE id = $1',
+      'SELECT id, email, role, nickname, created_at FROM users WHERE id = $1',
       [user.id]
     );
     if (!result.rowCount) {
@@ -298,6 +299,7 @@ async function handle(request, response) {
         id: result.rows[0].id,
         email: result.rows[0].email,
         role: result.rows[0].role,
+        nickname: result.rows[0].nickname,
         createdAt: result.rows[0].created_at
       }
     });
