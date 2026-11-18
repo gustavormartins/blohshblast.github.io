@@ -3,7 +3,7 @@ import { buildDatabasePoolOptions } from './db-config.mjs';
 
 const { Pool } = pg;
 
-const poolOptions = buildDatabasePoolOptions(process.env.DATABASE_URL, {
+const poolOptions = buildDatabasePoolOptions((process.env.DATABASE_URL || process.env.POSTGRES_URL), {
   production: process.env.NODE_ENV === 'production',
   certificateAuthority: process.env.PG_SSL_CA
 });
