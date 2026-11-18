@@ -9,6 +9,9 @@ async function main() {
   await query(
     'CREATE TABLE IF NOT EXISTS schema_migrations (name varchar(255) PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())'
   );
+  // The migration ledger lives in an API-exposed schema. Lock it down as well.
+  await query('ALTER TABLE public.schema_migrations ENABLE ROW LEVEL SECURITY');
+  await query('REVOKE ALL ON public.schema_migrations FROM PUBLIC, anon, authenticated');
 
   const names = (await readdir(root))
     .filter(name => name.endsWith('.sql'))
