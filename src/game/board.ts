@@ -4,19 +4,8 @@ import type { Board, Cell, Piece } from './types';
 export interface Position { x: number; y: number; }
 export interface CompletedLines { rows: number[]; columns: number[]; }
 
-export const SHAPES: readonly Piece[] = [
-  [[1]], [[1, 1]], [[1], [1]], [[1, 1, 1]], [[1], [1], [1]],
-  [[1, 1, 1, 1]], [[1], [1], [1], [1]],
-  [[1, 0], [1, 0], [1, 1]], [[0, 1], [0, 1], [1, 1]],
-  [[1, 1], [1, 0], [1, 0]], [[1, 1], [0, 1], [0, 1]],
-  [[1, 0, 0], [1, 1, 1]], [[0, 0, 1], [1, 1, 1]],
-  [[1, 1, 1], [1, 0, 0]], [[1, 1, 1], [0, 0, 1]],
-  [[1, 1], [1, 1]],
-  [[1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 1]],
-  [[1, 0], [1, 1], [1, 0]], [[0, 1], [1, 1], [0, 1]],
-  [[1, 1, 0], [0, 1, 1]], [[0, 1, 1], [1, 1, 0]],
-  [[1, 0], [1, 1], [0, 1]], [[0, 1], [1, 1], [1, 0]]
-];
+// Single catalogue shared by the engine and the product layer.
+export { SHAPES } from './constants';
 
 export function blockCount(piece: Piece): number {
   return piece.reduce((sum, row) => sum + row.filter(cell => cell === 1).length, 0);
