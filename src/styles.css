@@ -14,3 +14,131 @@ html[data-architecture="phase4"] {
   height: 58px;
   object-fit: contain;
 }
+
+/* Optional online account and global ranking; local/offline gameplay stays independent. */
+.p3-online-panel {
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 50;
+  width: min(390px, calc(100vw - 40px));
+  max-height: calc(100dvh - 100px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  background: rgba(3, 8, 5, .97);
+  box-shadow: 0 12px 44px rgba(0,0,0,.75), 0 0 22px color-mix(in srgb, var(--accent) 15%, transparent);
+  backdrop-filter: blur(14px);
+  text-align: left;
+  color: var(--text-main);
+}
+.p3-online-panel[hidden] { display: none !important; }
+.p3-online-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.p3-online-titlebar button { flex: 0 0 auto; }
+
+.p3-online-panel [hidden] { display: none !important; }
+.p3-online-panel .p3-online-status,
+.p3-online-panel .p3-online-note {
+  margin: 8px 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.p3-online-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+.p3-online-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.p3-online-panel input,
+.p3-online-panel select {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--text-main);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+}
+.p3-online-panel input:focus-visible,
+.p3-online-panel select:focus-visible,
+.p3-online-panel button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.p3-online-actions,
+.p3-online-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.p3-online-heading label {
+  flex: 1 1 auto;
+  font-size: 12px;
+  font-weight: 650;
+}
+.p3-online-heading select {
+  width: auto;
+  max-width: 145px;
+  flex: 1 1 auto;
+}
+.p3-online-panel button {
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--accent) 13%, #050807);
+  color: var(--text-main);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+.p3-online-panel button:hover {
+  background: color-mix(in srgb, var(--accent) 22%, #050807);
+}
+.p3-online-panel button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+.p3-online-score-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  font-size: 12px;
+}
+.p3-online-score-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p3-online-score-row span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+@media (max-width: 620px) {
+  .p3-online-panel { top: 57px; left: 9px; right: 9px; width: auto; max-height: calc(100dvh - 68px); padding: 12px; }
+  .p3-online-open { min-width: 46px; font-size: 7px !important; }
+  .p3-online-fields { grid-template-columns: minmax(0, 1fr); }
+  .p3-online-actions button { flex: 1 1 110px; }
+}
