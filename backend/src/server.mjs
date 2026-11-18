@@ -1,10 +1,11 @@
 import { createServer } from 'node:http';
 import { randomUUID, randomInt } from 'node:crypto';
-import { URL } from 'node:url';
+import { URL, pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
 import { authConfigured, getBearerToken, signAccessToken, verifyAccessToken } from './auth.mjs';
 import { closeDb, dbConfigured, query, transaction } from './db.mjs';
 import { hashPassword, verifyPassword } from './password.mjs';
-import { MemoryRateLimiter } from './rate-limit.mjs';
+import { MemoryRateLimiter, DatabaseRateLimiter } from './rate-limit.mjs';
 import {
   loginSchema,
   modeSchema,
@@ -18,15 +19,14 @@ const PORT = Number(process.env.PORT || 10000);
 const HOST = '0.0.0.0';
 const MAX_BODY_BYTES = 64 * 1024;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'https://blohsh-blast.vercel.app';
-const limiter = new MemoryRateLimiter({ maxKeys: 20_000 });
+const limiter = process.env.NODE_ENV === 'production'
+  ? new DatabaseRateLimiter({ query })
+  : new MemoryRateLimiter({ maxKeys: 20_000 });
 
-if (process.env.NODE_ENV === 'production') {
-  if (!dbConfigured()) throw new Error('DATABASE_URL is required in production');
-  if (!authConfigured()) throw new Error('JWT_SECRET with at least 32 bytes is required in production');
-}
+// Missing server-only variables keep readiness at 503 rather than crashing previews.
 
 function clientIp(request) {
-  const forwarded = request.headers['x-forwarded-for'];
+  const forwarded = request.headers['x-vercel-forwarded-for'] || request.headers['x-forwarded-for'];
   if (typeof forwarded === 'string' && forwarded) return forwarded.split(',')[0].trim();
   return request.socket.remoteAddress || 'unknown';
 }
@@ -68,6 +68,20 @@ async function readJson(request) {
     throw error;
   }
 
+  // Vercel can pre-parse JSON before the handler receives the request.
+  if (request.body !== undefined && request.body !== null) {
+    const raw = typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
+    if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
+      const error = new Error('BODY_TOO_LARGE');
+      error.code = 'BODY_TOO_LARGE';
+      throw error;
+    }
+    try { return JSON.parse(raw); } catch {
+      const error = new Error('INVALID_JSON');
+      error.code = 'INVALID_JSON';
+      throw error;
+    }
+  }
   const chunks = [];
   let total = 0;
 
@@ -110,8 +124,8 @@ async function requireUser(request, response) {
   return user;
 }
 
-function rateLimit(response, request, key, limit, windowMs) {
-  const result = limiter.consume(key, limit, windowMs);
+async function rateLimit(response, request, key, limit, windowMs) {
+  const result = await limiter.consume(key, limit, windowMs);
   response.setHeader('RateLimit-Limit', String(limit));
   response.setHeader('RateLimit-Remaining', String(result.remaining));
   response.setHeader('RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)));
@@ -166,7 +180,7 @@ async function handle(request, response) {
     return;
   }
 
-  if (!rateLimit(response, request, 'ip:' + ip, 120, 60_000)) return;
+  if (!(await rateLimit(response, request, 'ip:' + ip, 120, 60_000))) return;
 
   if (request.method === 'GET' && url.pathname === '/api/v1/leaderboard') {
     const modeParam = url.searchParams.get('mode') || 'classic';
@@ -198,7 +212,7 @@ async function handle(request, response) {
   }
 
   if (request.method === 'POST' && url.pathname === '/api/v1/auth/register') {
-    if (!rateLimit(response, request, 'register:' + ip, 5, 15 * 60_000)) return;
+    if (!(await rateLimit(response, request, 'register:' + ip, 5, 15 * 60_000))) return;
 
     let payload;
     try {
@@ -241,7 +255,7 @@ async function handle(request, response) {
     }
 
     const rateKey = 'login:' + ip + ':' + payload.email;
-    if (!rateLimit(response, request, rateKey, 10, 10 * 60_000)) return;
+    if (!(await rateLimit(response, request, rateKey, 10, 10 * 60_000))) return;
 
     if (!dbConfigured()) {
       send(response, request, 503, { error: 'database_unavailable' });
@@ -268,7 +282,7 @@ async function handle(request, response) {
   if (request.method === 'GET' && url.pathname === '/api/v1/me') {
     const user = await requireUser(request, response);
     if (!user) return;
-    if (!rateLimit(response, request, 'me:' + user.id, 60, 60_000)) return;
+    if (!(await rateLimit(response, request, 'me:' + user.id, 60, 60_000))) return;
 
     const result = await query(
       'SELECT id, email, role, created_at FROM users WHERE id = $1',
@@ -293,7 +307,7 @@ async function handle(request, response) {
   if (request.method === 'POST' && url.pathname === '/api/v1/runs') {
     const user = await requireUser(request, response);
     if (!user) return;
-    if (!rateLimit(response, request, 'run:' + user.id, 20, 60_000)) return;
+    if (!(await rateLimit(response, request, 'run:' + user.id, 20, 60_000))) return;
 
     let payload;
     try {
@@ -324,7 +338,7 @@ async function handle(request, response) {
   if (request.method === 'POST' && url.pathname === '/api/v1/scores') {
     const user = await requireUser(request, response);
     if (!user) return;
-    if (!rateLimit(response, request, 'score:' + user.id, 30, 60_000)) return;
+    if (!(await rateLimit(response, request, 'score:' + user.id, 30, 60_000))) return;
 
     let payload;
     try {
@@ -407,7 +421,7 @@ async function handle(request, response) {
       send(response, request, 403, { error: 'forbidden' });
       return;
     }
-    if (!rateLimit(response, request, 'admin:' + user.id, 30, 60_000)) return;
+    if (!(await rateLimit(response, request, 'admin:' + user.id, 30, 60_000))) return;
 
     const result = await query(
       'SELECT id, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 100'
@@ -419,44 +433,33 @@ async function handle(request, response) {
   send(response, request, 404, { error: 'not_found' });
 }
 
-const server = createServer((request, response) => {
-  Promise.resolve(handle(request, response)).catch(error => {
+export async function handleRequest(request, response) {
+  try {
+    await handle(request, response);
+  } catch (error) {
     const requestId = response.getHeader('X-Request-ID');
-    console.error(JSON.stringify({
-      event: 'request_failed',
-      requestId,
-      code: error.code || 'INTERNAL_ERROR',
-      message: error.message
-    }));
+    console.error(JSON.stringify({ event: 'request_failed', requestId, code: error.code || 'INTERNAL_ERROR' }));
     if (!response.headersSent) {
       send(response, request, 500, { error: 'internal_error', requestId });
-    } else {
+    } else if (typeof response.destroy === 'function') {
       response.destroy();
     }
+  }
+}
+
+// Run a persistent server only when invoked directly, never on Vercel imports.
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const server = createServer(handleRequest);
+  server.requestTimeout = 15_000;
+  server.headersTimeout = 10_000;
+  server.keepAliveTimeout = 5_000;
+  server.listen(PORT, HOST, () => {
+    console.log(JSON.stringify({ event: 'server_started', port: PORT, host: HOST, databaseConfigured: dbConfigured(), authConfigured: authConfigured() }));
   });
-});
-
-server.requestTimeout = 15_000;
-server.headersTimeout = 10_000;
-server.keepAliveTimeout = 5_000;
-
-server.listen(PORT, HOST, () => {
-  console.log(JSON.stringify({
-    event: 'server_started',
-    port: PORT,
-    host: HOST,
-    databaseConfigured: dbConfigured(),
-    authConfigured: authConfigured()
-  }));
-});
-
-const shutdown = async signal => {
-  server.close(async () => {
-    await closeDb();
-    process.exit(0);
-  });
-  console.log(JSON.stringify({ event: 'shutdown', signal }));
-};
-
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+  const shutdown = signal => {
+    server.close(async () => { await closeDb(); process.exit(0); });
+    console.log(JSON.stringify({ event: 'shutdown', signal }));
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
