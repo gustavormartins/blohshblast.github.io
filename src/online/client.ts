@@ -293,8 +293,16 @@ function installAccountUI(): void {
   });
   renderAccount();
   renderOnlineScores();
-  void restoreAccount();
-  void refreshLeaderboard();
+  // A Vite preview has no Vercel Functions: do not generate unhandled 404s
+  // during offline gameplay or browser E2E tests. Explicit user actions can
+  // still query mocked APIs in local integration tests.
+  const isLocalPreview = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  if (isLocalPreview) {
+    element('online-leaderboard-status').textContent = 'Ranking online disponível na versão publicada.';
+  } else {
+    void restoreAccount();
+    void refreshLeaderboard();
+  }
 }
 
 export function setupOnlineFeatures(engine: GameEngine): void {
