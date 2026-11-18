@@ -17,10 +17,31 @@ html[data-architecture="phase4"] {
 
 /* Optional online account and global ranking; local/offline gameplay stays independent. */
 .p3-online-panel {
-  margin-top: 12px;
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 50;
+  width: min(390px, calc(100vw - 40px));
+  max-height: calc(100dvh - 100px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  background: rgba(3, 8, 5, .97);
+  box-shadow: 0 12px 44px rgba(0,0,0,.75), 0 0 22px color-mix(in srgb, var(--accent) 15%, transparent);
+  backdrop-filter: blur(14px);
   text-align: left;
   color: var(--text-main);
 }
+.p3-online-panel[hidden] { display: none !important; }
+.p3-online-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.p3-online-titlebar button { flex: 0 0 auto; }
+
 .p3-online-panel [hidden] { display: none !important; }
 .p3-online-panel .p3-online-status,
 .p3-online-panel .p3-online-note {
@@ -115,8 +136,9 @@ html[data-architecture="phase4"] {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
-@media (max-width: 480px) {
-  .p3-online-panel { padding: 12px; }
+@media (max-width: 620px) {
+  .p3-online-panel { top: 57px; left: 9px; right: 9px; width: auto; max-height: calc(100dvh - 68px); padding: 12px; }
+  .p3-online-open { min-width: 46px; font-size: 7px !important; }
   .p3-online-fields { grid-template-columns: minmax(0, 1fr); }
   .p3-online-actions button { flex: 1 1 110px; }
 }
