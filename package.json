@@ -8,12 +8,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run typecheck && npm run test && npm run security:test && npm run build && npm run build:verify",
+    "check": "npm run typecheck && npm run test && npm run test:backend && npm run security:test && npm run build && npm run build:verify",
     "audit": "npm audit --audit-level=high",
     "security:test": "node tests/security/source-policy.mjs",
     "security:live": "node tests/security/live-site-smoke.mjs",
     "e2e:serve": "npm run build && vite preview --host 127.0.0.1 --port 4173",
-    "build:verify": "node tests/build/verify-dist.mjs"
+    "build:verify": "node tests/build/verify-dist.mjs",
+    "test:backend": "node --test backend/tests/*.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -21,5 +22,10 @@
     "typescript": "^5.9.3",
     "vite": "^8.3.3",
     "vitest": "4.1.12"
+  },
+  "dependencies": {
+    "jose": "6.2.12",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
   }
 }
