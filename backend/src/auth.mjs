@@ -49,7 +49,9 @@ export async function verifyAccessToken(token) {
 }
 
 export function getBearerToken(request) {
-  const header = request.headers.get('authorization') || '';
+  const header = typeof request.headers.get === 'function'
+    ? request.headers.get('authorization') || ''
+    : request.headers.authorization || '';
   if (!header.startsWith('Bearer ')) return null;
   return header.slice(7).trim() || null;
 }
