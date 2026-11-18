@@ -32,7 +32,7 @@ jobs:
         run: npm run test
 
       - name: Build
-        run: npm run build
+        run: npm run build && npm run build:verify
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium

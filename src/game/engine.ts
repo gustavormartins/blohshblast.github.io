@@ -1,4 +1,4 @@
-import { canFit } from './board';
+import { canPlayAny as boardCanPlayAny, isGameOver as boardIsGameOver } from './game-over';
 import type { GameEvent, GameMode, GameState, LegacyGameRuntimeApi } from './types';
 
 export interface GameRuntime extends LegacyGameRuntimeApi {}
@@ -12,19 +12,11 @@ export class LegacyGameRuntime implements GameRuntime {
 }
 
 export function canPlayAny(state: Pick<GameState, 'board' | 'rack'>): boolean {
-  return state.rack.some(piece => {
-    if (!piece) return false;
-    for (let y = 0; y < 8; y += 1) {
-      for (let x = 0; x < 8; x += 1) {
-        if (canFit(state.board, piece, x, y)) return true;
-      }
-    }
-    return false;
-  });
+  return boardCanPlayAny(state.board, state.rack);
 }
 
 export function isGameOver(state: Pick<GameState, 'board' | 'rack'>): boolean {
-  return state.rack.some(Boolean) && !canPlayAny(state);
+  return boardIsGameOver(state.board, state.rack);
 }
 
 export class GameEngine {
