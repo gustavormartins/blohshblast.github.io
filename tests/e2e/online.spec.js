@@ -7,6 +7,8 @@ test('online panel shows a safe nickname leaderboard and keeps local play option
     body: JSON.stringify({ data: [{ nickname: 'JogadorQA', score: 147, mode: 'classic', createdAt: '2026-11-18T12:00:00Z' }] })
   }));
   await page.goto('/');
+  await expect(page.locator('#online-panel')).toBeHidden();
+  await page.locator('#online-account-open').click();
   await expect(page.locator('#online-panel')).toBeVisible();
   await expect(page.locator('#online-leaderboard')).toContainText('JogadorQA');
   await expect(page.locator('#online-leaderboard')).toContainText('147');
@@ -16,6 +18,7 @@ test('online panel shows a safe nickname leaderboard and keeps local play option
   await expect(page.locator('#online-register-name-row')).toBeVisible();
 
   // Game remains usable without signing in.
+  await page.locator('#online-account-close').click();
   await page.locator('[data-pc-action="play"]').click();
   await expect(page.locator('#board .cell')).toHaveCount(64);
   await expect(page.locator('#phase3-menu')).toHaveCSS('visibility', 'hidden');
@@ -44,6 +47,7 @@ test('registration uses server endpoints, next run starts online and logout keep
       body:'{"data":{"runId":"ca3f8259-c57b-4d56-a160-4992a39834b2","mode":"classic","rulesVersion":"phase4"}}'});
   });
   await page.goto('/');
+  await page.locator('#online-account-open').click();
   await page.locator('#online-auth-toggle').click();
   await page.locator('#online-email').fill('qa@example.com');
   await page.locator('#online-password').fill('TestPassword12345!');
@@ -51,9 +55,11 @@ test('registration uses server endpoints, next run starts online and logout keep
   await page.locator('#online-account-submit').click();
   await expect(page.locator('#online-user-label')).toHaveText('Conectado: JogadorQA');
   await expect(page.locator('#online-password')).toHaveValue('');
+  await page.locator('#online-account-close').click();
   await page.locator('[data-pc-action="play"]').click();
   await expect.poll(() => started).toBe(1);
   await page.locator('#phase3-menu-game').click();
+  await page.locator('#online-account-open').click();
   await page.locator('#online-logout').click();
   await expect(page.locator('#online-form')).toBeVisible();
   await expect(page.locator('#board .cell')).toHaveCount(64);
