@@ -5,6 +5,7 @@ import { GameEngine, LegacyGameRuntime } from './game/engine';
 import type { LegacyGameRuntimeApi } from './game/types';
 import { Phase3Facade } from './product/phase3';
 import { qs } from './ui/dom';
+import { setupOnlineFeatures } from './online/client';
 
 declare global {
   interface Window {
@@ -70,6 +71,7 @@ function bootstrap(): void {
 
   const engine = new GameEngine(new LegacyGameRuntime(runtime));
   const product = new Phase3Facade(phase3);
+  setupOnlineFeatures(engine);
 
   qs<HTMLElement>('#board')?.setAttribute('data-architecture', 'typed');
   qs<HTMLElement>('#rack')?.setAttribute('data-architecture', 'typed');
