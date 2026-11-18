@@ -1,17 +1,13 @@
 import pg from 'pg';
+import { buildDatabasePoolOptions } from './db-config.mjs';
 
 const { Pool } = pg;
 
-const connectionString = process.env.DATABASE_URL;
-const pool = connectionString
-  ? new Pool({
-      connectionString,
-      max: 5,
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 5000,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
-    })
-  : null;
+const poolOptions = buildDatabasePoolOptions(process.env.DATABASE_URL, {
+  production: process.env.NODE_ENV === 'production',
+  certificateAuthority: process.env.PG_SSL_CA
+});
+const pool = poolOptions ? new Pool(poolOptions) : null;
 
 export function dbConfigured() {
   return Boolean(pool);
