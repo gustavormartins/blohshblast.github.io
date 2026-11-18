@@ -34,3 +34,24 @@ The current score envelope is server-side validation and ownership control, not 
 ## Database
 
 Migrations are in `sql/001_init.sql` and are executed by `npm run migrate` before the API starts.
+
+## Vercel deployment (Supabase integration)
+
+The Vercel-Supabase marketplace integration automatically provisions a server-only
+`POSTGRES_URL` in the Production environment. The Node API uses
+`DATABASE_URL || POSTGRES_URL`; do not duplicate or expose the connection URL.
+
+The Vercel project must also have a **separate, random** `JWT_SECRET` (at least
+32 bytes), stored as a sensitive server-side production environment variable.
+Do **not** use Supabase's JWT signing key as the game's JWT secret.
+
+The root `api/index.mjs` is one Vercel Node.js Function, with same-origin
+rewrites for `/healthz`, `/readyz` and `/api/v1/*`. The Vite frontend remains
+static and unchanged. Root `package.json` contains the API runtime dependencies.
+Production rate limiting uses the `api_rate_limits` PostgreSQL table with atomic
+upserts, rather than ephemeral in-memory counters; it is restricted with RLS and
+revoked client grants. Ensure `002_rate_limits.sql` is applied before production.
+
+Validation: the preview environment may return 503 from `/readyz` because the
+Supabase integration is Production-only. Validate the production endpoint after
+its deployment and configuration. Run backend tests with `npm run test:backend`.
