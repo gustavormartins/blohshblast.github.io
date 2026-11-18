@@ -17,7 +17,7 @@ import {
 const PORT = Number(process.env.PORT || 10000);
 const HOST = '0.0.0.0';
 const MAX_BODY_BYTES = 64 * 1024;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'https://blohsh-blast.onrender.com';
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'https://blohsh-blast.vercel.app';
 const limiter = new MemoryRateLimiter({ maxKeys: 20_000 });
 
 if (process.env.NODE_ENV === 'production') {
