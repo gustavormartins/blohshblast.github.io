@@ -4,10 +4,11 @@ export const MODE_VALUES = ['classic', 'zen', 'hardcore', 'daily', 'campaign', '
 
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(12).max(128)
+  password: z.string().min(12).max(128),
+  nickname: z.string().trim().regex(/^[A-Za-z0-9 _-]{1,16}$/).optional()
 }).strict();
 
-export const loginSchema = registerSchema;
+export const loginSchema = registerSchema.pick({ email: true, password: true });
 
 export const modeSchema = z.enum(MODE_VALUES);
 
