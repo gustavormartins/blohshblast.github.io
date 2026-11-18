@@ -212,8 +212,10 @@ function installAccountUI(): void {
   panel.id = 'online-panel';
   panel.className = 'phase3-panel p3-online-panel';
   panel.setAttribute('aria-label', 'Conta e ranking online');
+  panel.hidden = true;
   panel.innerHTML = [
-    '<div class="phase3-section-title">Conta e ranking online</div>',
+    '<div class="p3-online-titlebar"><div class="phase3-section-title">Conta e ranking online</div>',
+    '<button type="button" id="online-account-close" aria-label="Fechar conta online">Fechar</button></div>',
     '<p id="online-account-status" class="p3-online-status" role="status" aria-live="polite"></p>',
     '<div id="online-form">',
     '  <div class="p3-online-fields">',
@@ -245,6 +247,29 @@ function installAccountUI(): void {
   ].join('');
   if (localPanel) localPanel.insertAdjacentElement('afterend', panel);
   else menu.append(panel);
+
+  const openButton = document.createElement('button');
+  openButton.type = 'button';
+  openButton.id = 'online-account-open';
+  openButton.className = 'phase3-action p3-online-open';
+  openButton.textContent = 'ONLINE';
+  openButton.setAttribute('aria-label', 'Abrir conta e ranking online');
+  openButton.setAttribute('aria-controls', 'online-panel');
+  openButton.setAttribute('aria-expanded', 'false');
+  menu.querySelector('.phase3-actions')?.appendChild(openButton);
+  const togglePanel = (open: boolean) => {
+    panel.hidden = !open;
+    openButton.setAttribute('aria-expanded', String(open));
+    if (open) void refreshLeaderboard();
+  };
+  openButton.addEventListener('click', () => togglePanel(panel.hidden));
+  element('online-account-close').addEventListener('click', () => togglePanel(false));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !panel.hidden) {
+      event.stopPropagation();
+      togglePanel(false);
+    }
+  });
 
   element<HTMLInputElement>('online-nickname').value =
     normalizeNickname(element<HTMLInputElement>('phase3-nickname').value || 'PLAYER');
